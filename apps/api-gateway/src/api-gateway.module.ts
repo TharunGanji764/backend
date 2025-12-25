@@ -4,6 +4,7 @@ import { ApiGatewayService } from './api-gateway.service';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { AuthGuard } from '../lib/authguard';
 
 @Module({
   imports: [
@@ -17,12 +18,14 @@ import { JwtModule } from '@nestjs/jwt';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('TOKEN_PUBLIC_KEY'),
-        signOptions: { expiresIn: '1h' },
+        publicKey: configService.get('TOKEN_PUBLIC_KEY').replace(/\\n/g, '\n'),
+        verifyOptions: {
+          algorithms: ['RS256'],
+        },
       }),
     }),
   ],
   controllers: [ApiGatewayController],
-  providers: [ApiGatewayService],
+  providers: [ApiGatewayService, AuthGuard],
 })
 export class ApiGatewayModule {}

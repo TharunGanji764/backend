@@ -1,12 +1,19 @@
 import { AccessToken } from './../lib/generateAccessToken';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { RegisterDTO } from '../dto/register.dto';
 import { User } from '../schemas/user.schema';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { GenerateOtp } from '../lib/generateOtp';
 import { ClientProxy } from '@nestjs/microservices';
+import { verifyOtpDTO } from '../dto/verify-otp.dto';
+import { LoginDTO } from '../dto/login.dto';
 
 @Injectable()
 export class AuthServiceService {
@@ -39,11 +46,11 @@ export class AuthServiceService {
       'EX',
       300,
     );
-
     return { message: 'Otp sent to your email successfully' };
   }
 
-  async verifyOtp(emailId: string, otp: string) {
+  async verifyOtp(userData: verifyOtpDTO) {
+    const { emailId, otp, password, username, mobile } = userData;
     const storedHashedOtp = await this.redisOtpClient.get(
       `otp:register:${emailId}`,
     );
@@ -54,10 +61,43 @@ export class AuthServiceService {
     if (!isOtpValid) {
       throw new ConflictException('Invalid OTP provided');
     }
-    const accessToken = this.generateAccessToken.generateAccessToken({
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = this.userRepository.create({
       emailId,
+      password: hashedPassword,
+      username,
+      mobile,
+    });
+    await this.userRepository.save(newUser);
+    return { message: 'User registered successfully ' };
+  }
+
+  async loginUser(userData: LoginDTO) {
+    const { emailId, password } = userData;
+    const isUserExist = await this.userRepository.findOne({
+      where: { emailId: emailId },
     });
 
+    if (!isUserExist) {
+      throw new NotFoundException('Invalid user');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      isUserExist.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new ConflictException('Invalid Password');
+    }
+
+    const payload = {
+      sub: isUserExist.emailId,
+      username: isUserExist.username,
+    };
+    const accessToken =
+      await this.generateAccessToken.generateAccessToken(payload);
+    console.log('accessToken: ', accessToken);
     return { accessToken };
   }
 }

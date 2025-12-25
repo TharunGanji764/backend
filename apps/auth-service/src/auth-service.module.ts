@@ -9,6 +9,7 @@ import { AccessToken } from '../lib/generateAccessToken';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { GenerateOtp } from '../lib/generateOtp';
 import { RedisModule } from '@libs/redis';
+import { AuthGuard } from '../lib/authGuard';
 
 @Module({
   imports: [
@@ -33,8 +34,13 @@ import { RedisModule } from '@libs/redis';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('TOKEN_PRIVATE_KEY'),
-        signOptions: { expiresIn: '1h' },
+        privateKey: configService
+          .get('TOKEN_PRIVATE_KEY')
+          .replace(/\\n/g, '\n'),
+        signOptions: {
+          algorithm: 'RS256',
+          expiresIn: '60s',
+        },
       }),
     }),
     ClientsModule.register([
@@ -50,6 +56,6 @@ import { RedisModule } from '@libs/redis';
     RedisModule,
   ],
   controllers: [AuthServiceController],
-  providers: [AuthServiceService, AccessToken, GenerateOtp],
+  providers: [AuthServiceService, AccessToken, GenerateOtp, AuthGuard],
 })
 export class AuthServiceModule {}

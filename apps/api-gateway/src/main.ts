@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ApiGatewayModule } from './api-gateway.module';
 import { ValidationPipe } from '@nestjs/common';
+import { ApiGatewayExceptionFilter } from '../lib/exception-filter';
 
 async function bootstrap() {
   console.log('🚀 api-gateway SERVICE bootstrap started');
   const app = await NestFactory.create(ApiGatewayModule);
   app.setGlobalPrefix('api');
+  app.useGlobalFilters(new ApiGatewayExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

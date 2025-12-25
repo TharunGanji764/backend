@@ -22,12 +22,10 @@ export class AuthGuard implements CanActivate {
       throw new BadRequestException('No token available');
     }
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('TOKEN_PRIVATE_KEY'),
-      });
+      const payload = await this.jwtService.verifyAsync(token);
       request['user'] = payload;
-    } catch {
-      throw new UnauthorizedException();
+    } catch (err) {
+      throw new UnauthorizedException('invalid Token');
     }
     return true;
   }
