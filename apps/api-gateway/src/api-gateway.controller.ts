@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpException, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { RegisterDTO } from '../dto/register.dto';
@@ -48,7 +57,10 @@ export class ApiGatewayController {
   }
 
   @Post('login')
-  async login(@Body() userData: LoginDTO) {
+  async login(
+    @Res({ passthrough: true }) res: any,
+    @Body() userData: LoginDTO,
+  ) {
     try {
       const response = await lastValueFrom(
         this.httpService.post(
@@ -56,7 +68,16 @@ export class ApiGatewayController {
           userData,
         ),
       );
-      return response.data;
+      const { accessToken, refreshToken } = response.data;
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        path: '/api/auth/refresh',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      return { accessToken };
     } catch (err) {
       throw new HttpException(
         err.response?.data?.message || 'Auth service error',
@@ -69,5 +90,24 @@ export class ApiGatewayController {
   @Get('test')
   async test() {
     return 'Auth Service is working fine';
+  }
+
+  @Post('refresh')
+  async refreshToken(@Req() req) {
+    const refreshToken = req.cookies.refreshToken;
+    try {
+      const response = await lastValueFrom(
+        this.httpService.post(
+          `${process.env.NEXT_PUBLIC_API_AUTH_URL}/auth/refresh`,
+          { refreshToken },
+        ),
+      );
+      return response.data;
+    } catch (err) {
+      throw new HttpException(
+        err.response?.data?.message || 'Auth service error',
+        err.response?.status || 500,
+      );
+    }
   }
 }

@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../schemas/user.schema';
 import { JwtModule } from '@nestjs/jwt';
-import { AccessToken } from '../lib/generateAccessToken';
+import { AccessToken } from '../lib/generateTokens';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { GenerateOtp } from '../lib/generateOtp';
 import { RedisModule } from '@libs/redis';
@@ -39,7 +39,6 @@ import { AuthGuard } from '../lib/authGuard';
           .replace(/\\n/g, '\n'),
         signOptions: {
           algorithm: 'RS256',
-          expiresIn: '60s',
         },
       }),
     }),

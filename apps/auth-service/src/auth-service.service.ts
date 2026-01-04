@@ -1,10 +1,11 @@
-import { AccessToken } from './../lib/generateAccessToken';
+import { AccessToken } from '../lib/generateTokens';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   ConflictException,
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { RegisterDTO } from '../dto/register.dto';
 import { User } from '../schemas/user.schema';
@@ -97,7 +98,20 @@ export class AuthServiceService {
     };
     const accessToken =
       await this.generateAccessToken.generateAccessToken(payload);
-    console.log('accessToken: ', accessToken);
-    return { accessToken };
+    const refreshToken =
+      await this.generateAccessToken.generateRefreshToken(payload);
+
+    return { accessToken, refreshToken };
+  }
+
+  async refreshToken(token) {
+    if (!token) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+    const payload = await this.generateAccessToken.verifyRefreshToken(token);
+    const { exp, ...rest } = payload;
+    const newAccessToken =
+      await this.generateAccessToken.generateAccessToken(rest);
+    return { accessToken: newAccessToken };
   }
 }
