@@ -1,4 +1,3 @@
-import { AccessToken } from '../lib/generateTokens';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   ConflictException,
@@ -10,23 +9,28 @@ import {
 import { RegisterDTO } from '../dto/register.dto';
 import { User } from '../schemas/user.schema';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { GenerateOtp } from '../lib/generateOtp';
-import { ClientProxy } from '@nestjs/microservices';
 import { verifyOtpDTO } from '../dto/verify-otp.dto';
 import { LoginDTO } from '../dto/login.dto';
+import type { TokenService } from '../interfaces/token-service.interface';
+import type { OtpGenerator } from '../interfaces/otp-generator.interface';
+import type { NotificationChannel } from '../interfaces/notification-channel.interface';
+import type { Hash } from '../interfaces/hashing.interface';
 
 @Injectable()
 export class AuthServiceService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private generateOtp: GenerateOtp,
-    @Inject('NOTIFICATION_SERVICE')
-    private clientProxy: ClientProxy,
     @Inject('REDIS_OTP_DB')
     private redisOtpClient: any,
-    private generateAccessToken: AccessToken,
+    @Inject('TokenService')
+    private readonly tokenService: TokenService,
+    @Inject('otpGenerator')
+    private readonly otpGenerator: OtpGenerator,
+    @Inject('NotificationChannel')
+    private readonly emailChannel: NotificationChannel,
+    @Inject('HashService')
+    private readonly hashService: Hash,
   ) {}
 
   async registerUser(userData: RegisterDTO) {
@@ -38,9 +42,9 @@ export class AuthServiceService {
     if (isUserExist) {
       throw new ConflictException('User with this emailId already exists');
     }
-    const otp = this.generateOtp.generateOtp();
-    this.clientProxy.emit('send-otp-email', { email: emailId, otp: otp });
-    const hashedOtp = await bcrypt.hash(String(otp), 10);
+    const otp = this.otpGenerator.generate();
+    this.emailChannel.send(emailId, otp);
+    const hashedOtp = await this.hashService.hash(String(otp), 10);
     await this.redisOtpClient.set(
       `otp:register:${emailId}`,
       hashedOtp,
@@ -58,11 +62,11 @@ export class AuthServiceService {
     if (!storedHashedOtp) {
       throw new ConflictException('OTP has expired or is invalid');
     }
-    const isOtpValid = await bcrypt.compareSync(otp, storedHashedOtp);
+    const isOtpValid =await this.hashService.compare(otp, storedHashedOtp);
     if (!isOtpValid) {
       throw new ConflictException('Invalid OTP provided');
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await this.hashService.hash(password, 10);
     const newUser = this.userRepository.create({
       emailId,
       password: hashedPassword,
@@ -79,14 +83,16 @@ export class AuthServiceService {
       where: { emailId: emailId },
     });
 
+    console.log('isUserExist: ', isUserExist);
     if (!isUserExist) {
       throw new NotFoundException('Invalid user');
     }
 
-    const isPasswordValid = await bcrypt.compare(
+    const isPasswordValid = await this.hashService.compare(
       password,
       isUserExist.password,
     );
+    console.log('isPasswordValid: ', isPasswordValid);
 
     if (!isPasswordValid) {
       throw new ConflictException('Invalid Password');
@@ -96,10 +102,8 @@ export class AuthServiceService {
       sub: isUserExist.emailId,
       username: isUserExist.username,
     };
-    const accessToken =
-      await this.generateAccessToken.generateAccessToken(payload);
-    const refreshToken =
-      await this.generateAccessToken.generateRefreshToken(payload);
+    const accessToken = await this.tokenService.generateAccessToken(payload);
+    const refreshToken = await this.tokenService.generateRefreshToken(payload);
 
     return { accessToken, refreshToken };
   }
@@ -108,10 +112,9 @@ export class AuthServiceService {
     if (!token) {
       throw new UnauthorizedException('Refresh token not found');
     }
-    const payload = await this.generateAccessToken.verifyRefreshToken(token);
+    const payload = await this.tokenService.verifyRefreshToken(token);
     const { exp, ...rest } = payload;
-    const newAccessToken =
-      await this.generateAccessToken.generateAccessToken(rest);
+    const newAccessToken = await this.tokenService.generateAccessToken(rest);
     return { accessToken: newAccessToken };
   }
 }

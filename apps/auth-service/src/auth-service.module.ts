@@ -10,6 +10,10 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { GenerateOtp } from '../lib/generateOtp';
 import { RedisModule } from '@libs/redis';
 import { AuthGuard } from '../lib/authGuard';
+import { JwtTokenService } from '../services/jwt-token.service';
+import { NumberOtpGenerator } from '../services/number-otp.service';
+import { EmailChannel } from '../channels/email.channel';
+import { HashService } from '../services/hash.service';
 
 @Module({
   imports: [
@@ -55,6 +59,15 @@ import { AuthGuard } from '../lib/authGuard';
     RedisModule,
   ],
   controllers: [AuthServiceController],
-  providers: [AuthServiceService, AccessToken, GenerateOtp, AuthGuard],
+  providers: [
+    AuthServiceService,
+    AccessToken,
+    GenerateOtp,
+    AuthGuard,
+    { provide: 'TokenService', useClass: JwtTokenService },
+    { provide: 'otpGenerator', useClass: NumberOtpGenerator },
+    { provide: 'NotificationChannel', useClass: EmailChannel },
+    { provide: 'HashService', useClass: HashService },
+  ],
 })
 export class AuthServiceModule {}

@@ -31,9 +31,11 @@ export class ApiGatewayExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
+      const responseData = exception.getResponse();
+      console.log('responseData: ', responseData);
       return response.status(status).json({
         success: false,
-        message: exception.message,
+        message: responseData || exception.message,
       });
     }
 
