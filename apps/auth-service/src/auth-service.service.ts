@@ -83,7 +83,6 @@ export class AuthServiceService {
       where: { emailId: emailId },
     });
 
-    console.log('isUserExist: ', isUserExist);
     if (!isUserExist) {
       throw new NotFoundException('Invalid user');
     }
@@ -92,7 +91,6 @@ export class AuthServiceService {
       password,
       isUserExist.password,
     );
-    console.log('isPasswordValid: ', isPasswordValid);
 
     if (!isPasswordValid) {
       throw new ConflictException('Invalid Password');

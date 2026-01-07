@@ -10,7 +10,6 @@ export class AuthServiceController {
 
   @Post('register')
   async register(@Body() userData: RegisterDTO) {
-    console.log('userData:22', userData);
     return await this.authServiceService.registerUser(userData);
   }
 
