@@ -13,7 +13,17 @@ import Redis from 'ioredis';
         });
       },
     },
+    {
+      provide: 'REDIS_TEMPORARY_USER_DB',
+      useFactory: () => {
+        return new Redis({
+          host: '127.0.0.1',
+          port: 6379,
+          db: 2,
+        });
+      },
+    },
   ],
-  exports: ['REDIS_OTP_DB'],
+  exports: ['REDIS_OTP_DB', 'REDIS_TEMPORARY_USER_DB'],
 })
 export class RedisModule {}

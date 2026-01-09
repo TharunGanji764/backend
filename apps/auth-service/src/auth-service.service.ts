@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { RegisterDTO } from '../dto/register.dto';
-import { User } from '../schemas/user.schema';
+import { Auth } from '../schemas/auth.schema';
 import { Repository } from 'typeorm';
 import { verifyOtpDTO } from '../dto/verify-otp.dto';
 import { LoginDTO } from '../dto/login.dto';
@@ -15,12 +15,13 @@ import type { TokenService } from '../interfaces/token-service.interface';
 import type { OtpGenerator } from '../interfaces/otp-generator.interface';
 import type { NotificationChannel } from '../interfaces/notification-channel.interface';
 import type { Hash } from '../interfaces/hashing.interface';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthServiceService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectRepository(Auth)
+    private userRepository: Repository<Auth>,
     @Inject('REDIS_OTP_DB')
     private redisOtpClient: any,
     @Inject('TokenService')
@@ -31,10 +32,12 @@ export class AuthServiceService {
     private readonly emailChannel: NotificationChannel,
     @Inject('HashService')
     private readonly hashService: Hash,
+    @Inject('REDIS_TEMPORARY_USER_DB')
+    private redisTemporaryUserClient: any,
   ) {}
 
   async registerUser(userData: RegisterDTO) {
-    const { emailId } = userData;
+    const { emailId, password, username, mobile } = userData;
     const isUserExist = await this.userRepository.findOne({
       where: { emailId: emailId },
     });
@@ -45,35 +48,46 @@ export class AuthServiceService {
     const otp = this.otpGenerator.generate();
     this.emailChannel.send(emailId, otp);
     const hashedOtp = await this.hashService.hash(String(otp), 10);
+    const hashedPassword = await this.hashService.hash(password, 10);
+    const newUser = {
+      userid: uuidv4(),
+      emailId,
+      password: hashedPassword,
+      username,
+      mobile,
+    };
     await this.redisOtpClient.set(
       `otp:register:${emailId}`,
       hashedOtp,
       'EX',
       300,
     );
+    await this.redisTemporaryUserClient.set(
+      `tempuser:register:${emailId}`,
+      JSON.stringify(newUser),
+      'EX',
+      600,
+    );
     return { message: 'Otp sent to your email successfully' };
   }
 
   async verifyOtp(userData: verifyOtpDTO) {
-    const { emailId, otp, password, username, mobile } = userData;
+    const { otp, emailId } = userData;
+    const user = await this.redisTemporaryUserClient.get(
+      `tempuser:register:${emailId}`,
+    );
     const storedHashedOtp = await this.redisOtpClient.get(
       `otp:register:${emailId}`,
     );
     if (!storedHashedOtp) {
       throw new ConflictException('OTP has expired or is invalid');
     }
-    const isOtpValid =await this.hashService.compare(otp, storedHashedOtp);
+    const isOtpValid = await this.hashService.compare(otp, storedHashedOtp);
     if (!isOtpValid) {
       throw new ConflictException('Invalid OTP provided');
     }
-    const hashedPassword = await this.hashService.hash(password, 10);
-    const newUser = this.userRepository.create({
-      emailId,
-      password: hashedPassword,
-      username,
-      mobile,
-    });
-    await this.userRepository.save(newUser);
+    await this.userRepository.create(JSON.parse(user));
+    await this.userRepository.save(JSON.parse(user));
     return { message: 'User registered successfully ' };
   }
 

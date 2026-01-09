@@ -3,7 +3,7 @@ import { AuthServiceController } from './auth-service.controller';
 import { AuthServiceService } from './auth-service.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../schemas/user.schema';
+import { Auth } from '../schemas/auth.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { AccessToken } from '../lib/generateTokens';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -31,10 +31,10 @@ import { HashService } from '../services/hash.service';
         password: configService.get('POSTGRES_DB_PASSWORD'),
         synchronize: true,
         autoLoadEntities: true,
-        entities: [User],
+        entities: [Auth],
       }),
     }),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([Auth]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
