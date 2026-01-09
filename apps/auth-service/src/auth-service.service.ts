@@ -46,7 +46,6 @@ export class AuthServiceService {
       throw new ConflictException('User with this emailId already exists');
     }
     const otp = this.otpGenerator.generate();
-    this.emailChannel.send(emailId, otp);
     const hashedOtp = await this.hashService.hash(String(otp), 10);
     const hashedPassword = await this.hashService.hash(password, 10);
     const newUser = {
@@ -68,6 +67,7 @@ export class AuthServiceService {
       'EX',
       600,
     );
+    this.emailChannel.send(emailId, otp);
     return { message: 'Otp sent to your email successfully' };
   }
 
