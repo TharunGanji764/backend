@@ -10,7 +10,7 @@ async function bootstrap() {
     options: { port: 4002, host: '0.0.0.0' },
   });
   await app.startAllMicroservices();
-  await app.listen(process.env.PORT ?? 4001, () => {
+  await app.listen(process.env.PORT || 4001, () => {
     console.log(`Auth Service running on port 4001`);
   });
 }
