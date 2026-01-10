@@ -7,7 +7,7 @@ export class Address {
   id: number;
 
   @Column()
-  address_line1: string;
+  address_line: string;
 
   @Column()
   city: string;

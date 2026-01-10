@@ -10,13 +10,13 @@ import {
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { RegisterDTO } from '../dto/register.dto';
-import { verifyOtpDTO } from '../dto/verify-otp.dto';
-import { LoginDTO } from '../dto/login.dto';
-import { AuthGuard } from '../lib/authguard';
+import { RegisterDTO } from '../../dto/register.dto';
+import { verifyOtpDTO } from '../../dto/verify-otp.dto';
+import { LoginDTO } from '../../dto/login.dto';
+import { AuthGuard } from '../../lib/authguard';
 
 @Controller('auth')
-export class ApiGatewayController {
+export class AuthGatewayController {
   constructor(private readonly httpService: HttpService) {}
 
   @Post('register')

@@ -92,8 +92,8 @@ export class AuthServiceService {
     }
     const { password, ...rest } = JSON.parse(user);
     this.userClient.emit('create-profile', { ...rest });
-    // await this.userRepository.create(JSON.parse(user));
-    // await this.userRepository.save(JSON.parse(user));
+    await this.userRepository.create(JSON.parse(user));
+    await this.userRepository.save(JSON.parse(user));
     return { message: 'User registered successfully ' };
   }
 
@@ -117,8 +117,9 @@ export class AuthServiceService {
     }
 
     const payload = {
-      sub: isUserExist.emailId,
+      sub: isUserExist.userid,
       username: isUserExist.username,
+      email: isUserExist.emailId,
     };
     const accessToken = await this.tokenService.generateAccessToken(payload);
     const refreshToken = await this.tokenService.generateRefreshToken(payload);
@@ -131,7 +132,7 @@ export class AuthServiceService {
       throw new UnauthorizedException('Refresh token not found');
     }
     const payload = await this.tokenService.verifyRefreshToken(token);
-    const { exp, ...rest } = payload;
+    const { exp, iat, ...rest } = payload;
     const newAccessToken = await this.tokenService.generateAccessToken(rest);
     return { accessToken: newAccessToken };
   }

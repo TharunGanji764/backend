@@ -28,5 +28,5 @@ export class Users {
   email_id: string;
 
   @OneToMany(() => Address, (address) => address.user)
-  address: Address;
+  address: Address[];
 }
