@@ -16,6 +16,7 @@ import type { OtpGenerator } from '../interfaces/otp-generator.interface';
 import type { NotificationChannel } from '../interfaces/notification-channel.interface';
 import type { Hash } from '../interfaces/hashing.interface';
 import { v4 as uuidv4 } from 'uuid';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AuthServiceService {
@@ -34,6 +35,9 @@ export class AuthServiceService {
     private readonly hashService: Hash,
     @Inject('REDIS_TEMPORARY_USER_DB')
     private redisTemporaryUserClient: any,
+
+    @Inject('USER_SERVICE')
+    private readonly userClient: ClientProxy,
   ) {}
 
   async registerUser(userData: RegisterDTO) {
@@ -86,8 +90,10 @@ export class AuthServiceService {
     if (!isOtpValid) {
       throw new ConflictException('Invalid OTP provided');
     }
-    await this.userRepository.create(JSON.parse(user));
-    await this.userRepository.save(JSON.parse(user));
+    const { password, ...rest } = JSON.parse(user);
+    this.userClient.emit('create-profile', { ...rest });
+    // await this.userRepository.create(JSON.parse(user));
+    // await this.userRepository.save(JSON.parse(user));
     return { message: 'User registered successfully ' };
   }
 

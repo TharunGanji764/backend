@@ -22,8 +22,12 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@libs/redis": ["libs/redis/src"],
-      "@libs/redis/*": ["libs/redis/src/*"]
+      "@libs/redis": [
+        "libs/redis/src"
+      ],
+      "@libs/redis/*": [
+        "libs/redis/src/*"
+      ]
     }
   }
 }

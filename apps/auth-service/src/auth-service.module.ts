@@ -55,6 +55,14 @@ import { HashService } from '../services/hash.service';
           port: 4003,
         },
       },
+      {
+        name: 'USER_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: 'localhost',
+          port: 4004,
+        },
+      },
     ]),
     RedisModule,
   ],
