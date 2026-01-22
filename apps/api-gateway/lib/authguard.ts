@@ -3,6 +3,7 @@ import {
   BadRequestException,
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -13,6 +14,8 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    @Inject('REDIS_SESSION_MANAGE')
+    private redisSessionManage: any,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -29,7 +32,13 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token);
+      const isSessionAvailable = await this.redisSessionManage.get(
+        `sessionId:${payload?.sessionId}`,
+      );
       request.user = payload;
+      if (!isSessionAvailable) {
+        throw new UnauthorizedException('Token expired');
+      }
       return true;
     } catch (err) {
       if (err.name === 'TokenExpiredError') {

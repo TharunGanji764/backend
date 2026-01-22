@@ -8,6 +8,7 @@ import { AuthGuard } from '../lib/authguard';
 import { UserGatewayController } from './controllers/user-gateway.controller';
 import { UserGatewayService } from './services/user-gateway.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { RedisModule } from '@libs/redis';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         },
       },
     ]),
+    RedisModule,
   ],
   controllers: [AuthGatewayController, UserGatewayController],
   providers: [AuthGatewayService, AuthGuard, UserGatewayService],

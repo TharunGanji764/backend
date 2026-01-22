@@ -27,4 +27,10 @@ export class AuthServiceController {
   async refreshToken(@Body('refreshToken') refreshToken: string) {
     return await this.authServiceService.refreshToken(refreshToken);
   }
+
+  @Post('logout')
+  async logout(@Body() body: { userId: string; sessionId: string }) {
+    const { userId, sessionId } = body;
+    return await this.authServiceService.logout(userId, sessionId);
+  }
 }

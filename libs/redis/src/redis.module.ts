@@ -23,7 +23,17 @@ import Redis from 'ioredis';
         });
       },
     },
+    {
+      provide: 'REDIS_SESSION_MANAGE',
+      useFactory: () => {
+        return new Redis({
+          host: '127.0.0.1',
+          port: 6379,
+          db: 3,
+        });
+      },
+    },
   ],
-  exports: ['REDIS_OTP_DB', 'REDIS_TEMPORARY_USER_DB'],
+  exports: ['REDIS_OTP_DB', 'REDIS_TEMPORARY_USER_DB', 'REDIS_SESSION_MANAGE'],
 })
 export class RedisModule {}

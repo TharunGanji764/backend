@@ -68,16 +68,23 @@ export class AuthGatewayController {
           userData,
         ),
       );
-      const { accessToken, refreshToken } = response.data;
+      const { accessToken, refreshToken, sub, ...rest } = response.data;
+      const userId = sub;
 
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: false,
-        sameSite: 'strict',
+        sameSite: 'lax',
         path: '/api/auth/refresh',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      return { accessToken };
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
+      return { accessToken, userId, ...rest };
     } catch (err) {
       throw new HttpException(
         err.response?.data?.message || 'Auth service error',
@@ -102,6 +109,29 @@ export class AuthGatewayController {
           { refreshToken },
         ),
       );
+      return response.data;
+    } catch (err) {
+      throw new HttpException(
+        err.response?.data?.message || 'Auth service error',
+        err.response?.status || 500,
+      );
+    }
+  }
+
+  @Post('logout')
+  async logout(
+    @Res({ passthrough: true }) res: any,
+    @Body() body: { userId: string; sessionId: string },
+  ) {
+    try {
+      const response = await lastValueFrom(
+        this.httpService.post(
+          `${process.env.NEXT_PUBLIC_API_AUTH_URL}/auth/logout`,
+          { userId: body?.userId, sessionId: body?.sessionId },
+        ),
+      );
+      res.clearCookie('access_token', { path: '/' });
+      res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
       return response.data;
     } catch (err) {
       throw new HttpException(

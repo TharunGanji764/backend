@@ -35,7 +35,8 @@ export class AuthServiceService {
     private readonly hashService: Hash,
     @Inject('REDIS_TEMPORARY_USER_DB')
     private redisTemporaryUserClient: any,
-
+    @Inject('REDIS_SESSION_MANAGE')
+    private redisSessionManagement: any,
     @Inject('USER_SERVICE')
     private readonly userClient: ClientProxy,
   ) {}
@@ -103,6 +104,23 @@ export class AuthServiceService {
       where: { emailId: emailId },
     });
 
+    const totalSessions = await this.redisSessionManagement.keys(`sessionId:*`);
+    const userSessions: any = [];
+
+    for (const session of totalSessions) {
+      const sessionData = await this.redisSessionManagement.get(session);
+      const parsed = JSON.parse(sessionData);
+      if (parsed?.['userId'] === isUserExist?.userid) {
+        userSessions?.push(session);
+      }
+    }
+
+    if (userSessions?.length >= 2) {
+      return {
+        message: `There are ${userSessions?.length} sessions available please logout any one to continue login`,
+      };
+    }
+
     if (!isUserExist) {
       throw new NotFoundException('Invalid user');
     }
@@ -116,24 +134,51 @@ export class AuthServiceService {
       throw new ConflictException('Invalid Password');
     }
 
+    const sessionId = uuidv4();
     const payload = {
       sub: isUserExist.userid,
       username: isUserExist.username,
       email: isUserExist.emailId,
+      sessionId,
     };
     const accessToken = await this.tokenService.generateAccessToken(payload);
     const refreshToken = await this.tokenService.generateRefreshToken(payload);
+    const session = {
+      sessionId,
+      refreshToken,
+      userId: isUserExist.userid,
+    };
+    await this.redisSessionManagement.set(
+      `sessionId:${sessionId}`,
+      JSON.stringify(session),
+      'EX',
+      7 * 24 * 60 * 60,
+    );
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, ...payload };
   }
 
-  async refreshToken(token) {
+  async refreshToken(token: string) {
     if (!token) {
       throw new UnauthorizedException('Refresh token not found');
     }
     const payload = await this.tokenService.verifyRefreshToken(token);
     const { exp, iat, ...rest } = payload;
+    const isSessionAvailable = await this.redisSessionManagement.get(
+      `sessionId:${rest?.sessionId}`,
+    );
+    if (!isSessionAvailable) {
+      throw new UnauthorizedException('Token Invalid');
+    }
     const newAccessToken = await this.tokenService.generateAccessToken(rest);
     return { accessToken: newAccessToken };
+  }
+
+  async logout(userId: string, sessionId: string) {
+    const session = await this.redisSessionManagement.del(
+      `sessionId:${sessionId}`,
+    );
+
+    return { session };
   }
 }
