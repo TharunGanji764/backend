@@ -31,7 +31,7 @@ import { HashService } from '../services/hash.service';
         password: configService.get('POSTGRES_DB_PASSWORD'),
         synchronize: true,
         autoLoadEntities: true,
-        entities: [Auth],
+        database: configService.get('POSTGRES_DB_NAME'),
       }),
     }),
     TypeOrmModule.forFeature([Auth]),

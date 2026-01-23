@@ -15,7 +15,8 @@
     "start:auth-service": "nest start auth-service --watch",
     "start:notification-service": "nest start notification-service --watch",
     "start:user-service": "nest start user-service --watch",
-    "start:all": "concurrently \"yarn start:api-gateway\" \"yarn start:auth-service\" \"yarn start:notification-service\" \"yarn start:user-service\""
+    "start:product-service": "nest start product-service --watch",
+    "start:all": "concurrently \"yarn start:api-gateway\" \"yarn start:auth-service\" \"yarn start:notification-service\" \"yarn start:user-service\" \"yarn start:product-service\""
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

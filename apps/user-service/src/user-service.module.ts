@@ -9,7 +9,7 @@ import { Address } from '../schemas/adress.schema';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: 'apps/auth-service/dotenv/.env',
+      envFilePath: 'apps/user-service/dotenv/.env',
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({
@@ -22,10 +22,10 @@ import { Address } from '../schemas/adress.schema';
         password: configService.get('POSTGRES_DB_PASSWORD'),
         synchronize: true,
         autoLoadEntities: true,
-        entities: [Users,Address],
+        database: configService.get('POSTGRES_DB_NAME'),
       }),
     }),
-    TypeOrmModule.forFeature([Users,Address]),
+    TypeOrmModule.forFeature([Users, Address]),
   ],
   controllers: [UserServiceController],
   providers: [UserServiceService],

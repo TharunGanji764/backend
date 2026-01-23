@@ -9,6 +9,8 @@ import { UserGatewayController } from './controllers/user-gateway.controller';
 import { UserGatewayService } from './services/user-gateway.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { RedisModule } from '@libs/redis';
+import { ProductsController } from './controllers/products-gateway.controller';
+import { ProductGatewayService } from './services/product-gateway.service';
 
 @Module({
   imports: [
@@ -37,10 +39,28 @@ import { RedisModule } from '@libs/redis';
           port: 4004,
         },
       },
+      {
+        name: 'PRODUCT_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: 'localhost',
+          port: 4005,
+        },
+      },
     ]),
+
     RedisModule,
   ],
-  controllers: [AuthGatewayController, UserGatewayController],
-  providers: [AuthGatewayService, AuthGuard, UserGatewayService],
+  controllers: [
+    AuthGatewayController,
+    UserGatewayController,
+    ProductsController,
+  ],
+  providers: [
+    AuthGatewayService,
+    AuthGuard,
+    UserGatewayService,
+    ProductGatewayService,
+  ],
 })
 export class ApiGatewayModule {}
