@@ -1,12 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Products } from '../schemas/products.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ProductServiceService {
-  getHello(): string {
-    return 'Hello World!';
-  }
+  constructor(
+    @InjectRepository(Products)
+    private productsRepository: Repository<Products>,
+  ) {}
 
   async getProducts() {
-    return { message: 'this is products service' };
+    const productsData = await this.productsRepository.find();
+    return { data: productsData };
   }
 }

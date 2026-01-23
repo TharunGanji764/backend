@@ -3,6 +3,12 @@ import { ProductServiceController } from './product-service.controller';
 import { ProductServiceService } from './product-service.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Products } from '../schemas/products.entity';
+import { ProductDimensions } from '../schemas/product-dimensions.entity';
+import { ProductImages } from '../schemas/product-images.entity';
+import { ProductMeta } from '../schemas/product-meta.entity';
+import { ProductReviews } from '../schemas/product-reviews.entity';
+import { ProductTags } from '../schemas/product-tags.entity';
 
 @Module({
   imports: [
@@ -24,6 +30,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         database: config.get('POSTGRES_DB_NAME'),
       }),
     }),
+    TypeOrmModule.forFeature([
+      Products,
+      ProductDimensions,
+      ProductImages,
+      ProductMeta,
+      ProductReviews,
+      ProductTags,
+    ]),
   ],
   controllers: [ProductServiceController],
   providers: [ProductServiceService],
