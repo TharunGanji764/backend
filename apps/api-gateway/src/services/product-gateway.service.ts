@@ -8,7 +8,15 @@ export class ProductGatewayService {
     private readonly productClient: ClientProxy,
   ) {}
 
-  async getProducts() {
-    return await this.productClient.send('get_products', {});
+  async getProducts(page: number, limit: number) {
+    return await this.productClient.send('get_products', { page, limit });
+  }
+
+  async getCategories() {
+    return await this.productClient.send('get_categories', {});
+  }
+
+  async getProductDetails(id: string) {
+    return await this.productClient.send('get_product_details', { id });
   }
 }

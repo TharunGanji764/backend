@@ -10,8 +10,29 @@ export class ProductServiceService {
     private productsRepository: Repository<Products>,
   ) {}
 
-  async getProducts() {
-    const productsData = await this.productsRepository.find();
-    return { data: productsData };
+  async getProducts(page: number, limit: number) {
+    const offset = (page - 1) * limit;
+    const [productsData, total] = await this.productsRepository.findAndCount({
+      take: limit,
+      skip: offset,
+    });
+    return { page, limit, total, data: productsData };
+  }
+
+  async getCategories() {
+    const categoriesData = await this.productsRepository
+      .createQueryBuilder('product')
+      .select('DISTINCT product.category', 'category')
+      .getRawMany();
+    const result = categoriesData?.map((category: any) => category?.category);
+    return result;
+  }
+
+  async getProductDetails(id: string) {
+    const productDetails = await this.productsRepository.findOne({
+      where: { sku: id },
+      relations: ['dimensions', 'images', 'reviews'],
+    });
+    return productDetails;
   }
 }

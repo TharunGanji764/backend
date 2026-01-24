@@ -26,11 +26,11 @@ export class ProductReviews {
   comment: string;
 
   @Column({ type: 'timestamp', nullable: true })
-  reviewDate: Date;
+  review_date: Date;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  reviewerName: string;
+  reviewer_name: string;
 
   @Column({ type: 'varchar', length: 150, nullable: true })
-  reviewerEmail: string;
+  reviewer_email: string;
 }

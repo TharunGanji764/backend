@@ -19,5 +19,5 @@ export class ProductImages {
   product: Products;
 
   @Column({ type: 'text' })
-  imageUrl: string;
+  image_url: string;
 }
