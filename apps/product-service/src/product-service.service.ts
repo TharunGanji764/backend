@@ -35,4 +35,18 @@ export class ProductServiceService {
     });
     return productDetails;
   }
+
+  async getProductDataForAddToCart(id: string) {
+    const productDetails = await this.productsRepository
+      .createQueryBuilder('product')
+      .select([
+        'product.sku',
+        'product.title',
+        'product.price',
+        'product.thumbnail',
+      ])
+      .where('product.sku=:id', { id })
+      .getOne();
+    return productDetails;
+  }
 }

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { AxiosError } from 'axios';
+import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
 @Catch()
 export class ApiGatewayExceptionFilter implements ExceptionFilter {
@@ -18,7 +19,7 @@ export class ApiGatewayExceptionFilter implements ExceptionFilter {
       const error = exception.getError() as any;
       return response.status(error.status || 500).json({
         success: false,
-        message: error.message,
+        message: error.message || 'Internal service error',
       });
     }
 
@@ -29,18 +30,32 @@ export class ApiGatewayExceptionFilter implements ExceptionFilter {
       });
     }
 
-    if (exception instanceof HttpException) {
-      const status = exception.getStatus();
-      const responseData = exception.getResponse();
-      return response.status(status).json({
+    if (
+      exception instanceof JsonWebTokenError ||
+      exception instanceof TokenExpiredError
+    ) {
+      return response.status(HttpStatus.UNAUTHORIZED).json({
         success: false,
-        message: responseData || exception.message,
+        message: 'Invalid or expired token',
       });
     }
 
-    return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const responseData = exception.getResponse();
+
+      return response.status(status).json({
+        success: false,
+        message:
+          typeof responseData === 'string'
+            ? responseData
+            : (responseData as any)?.message || exception.message,
+      });
+    }
+
+    return response.status(exception?.status).json({
       success: false,
-      message: 'Internal server error',
+      message: exception,
     });
   }
 }

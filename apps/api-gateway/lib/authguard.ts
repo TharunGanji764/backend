@@ -25,6 +25,10 @@ export class AuthGuard implements CanActivate {
       throw new BadRequestException('Authorization header missing');
     }
 
+    if (!authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Invalid authorization format');
+    }
+
     const token = authHeader.split(' ')[1];
     if (!token) {
       throw new BadRequestException('Invalid authorization format');

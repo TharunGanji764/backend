@@ -116,9 +116,9 @@ export class AuthServiceService {
     }
 
     if (userSessions?.length >= 2) {
-      return {
-        message: `There are ${userSessions?.length} sessions available please logout any one to continue login`,
-      };
+      throw new UnauthorizedException(
+        `There are ${userSessions?.length} sessions available please logout any one to continue login`,
+      );
     }
 
     if (!isUserExist) {

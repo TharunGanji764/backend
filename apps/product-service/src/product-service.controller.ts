@@ -20,4 +20,9 @@ export class ProductServiceController {
   async getProductDetails(@Payload() data: { id: string }) {
     return await this.productServiceService.getProductDetails(data?.id);
   }
+
+  @MessagePattern('get_ProductData')
+  async getProductData(@Payload() data: { product_id: string }) {
+    return await this.productServiceService.getProductDataForAddToCart(data?.product_id);
+  }
 }

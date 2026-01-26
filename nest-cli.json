@@ -29,6 +29,15 @@
         "tsConfigPath": "apps/auth-service/tsconfig.app.json"
       }
     },
+    "cart-service": {
+      "type": "application",
+      "root": "apps/cart-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/cart-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/cart-service/tsconfig.app.json"
+      }
+    },
     "notification-service": {
       "type": "application",
       "root": "apps/notification-service",

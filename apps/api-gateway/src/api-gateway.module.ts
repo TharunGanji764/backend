@@ -11,6 +11,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { RedisModule } from '@libs/redis';
 import { ProductsController } from './controllers/products-gateway.controller';
 import { ProductGatewayService } from './services/product-gateway.service';
+import { CartController } from './controllers/cart-gateway.controller';
+import { CartGatewayService } from './services/cart-gateway.service';
 
 @Module({
   imports: [
@@ -47,6 +49,14 @@ import { ProductGatewayService } from './services/product-gateway.service';
           port: 4005,
         },
       },
+      {
+        name: 'CART_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: 'localhost',
+          port: 4006,
+        },
+      },
     ]),
 
     RedisModule,
@@ -55,12 +65,14 @@ import { ProductGatewayService } from './services/product-gateway.service';
     AuthGatewayController,
     UserGatewayController,
     ProductsController,
+    CartController,
   ],
   providers: [
     AuthGatewayService,
     AuthGuard,
     UserGatewayService,
     ProductGatewayService,
+    CartGatewayService,
   ],
 })
 export class ApiGatewayModule {}
