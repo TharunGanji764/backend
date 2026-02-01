@@ -53,7 +53,7 @@ export class ApiGatewayExceptionFilter implements ExceptionFilter {
       });
     }
 
-    return response.status(exception?.status).json({
+    return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: exception,
     });

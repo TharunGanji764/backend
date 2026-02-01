@@ -140,6 +140,7 @@ export class AuthServiceService {
       username: isUserExist.username,
       email: isUserExist.emailId,
       sessionId,
+      mobile: isUserExist?.mobile,
     };
     const accessToken = await this.tokenService.generateAccessToken(payload);
     const refreshToken = await this.tokenService.generateRefreshToken(payload);

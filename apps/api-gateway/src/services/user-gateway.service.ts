@@ -17,7 +17,7 @@ export class UserGatewayService {
   }
 
   async getUserAddress(user: any) {
-    return await this.userClient.send('get_user_address', {
+    return await this.userClient.send('get_user_addressess', {
       userId: user.sub,
       emailId: user.email,
     });

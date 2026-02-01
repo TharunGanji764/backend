@@ -17,9 +17,9 @@ export class UserServiceController {
     return await this.userServiceService.getUserByEmail(data);
   }
 
-  @MessagePattern('get_user_address')
-  async getUserAddress(data: any) {
-    return await this.userServiceService.getUserAddress(data);
+  @MessagePattern('get_user_addressess')
+  async getUserAddressess(data: any) {
+    return await this.userServiceService.getUserAddressess(data);
   }
 
   @MessagePattern('add_user_address')

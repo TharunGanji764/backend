@@ -39,7 +39,7 @@ export class UserServiceService {
     return user;
   }
 
-  async getUserAddress(data: any) {
+  async getUserAddressess(data: any) {
     const { userId } = data;
     const userAddress = await this.addressRepository.find({
       where: {

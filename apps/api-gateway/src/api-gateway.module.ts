@@ -13,6 +13,8 @@ import { ProductsController } from './controllers/products-gateway.controller';
 import { ProductGatewayService } from './services/product-gateway.service';
 import { CartController } from './controllers/cart-gateway.controller';
 import { CartGatewayService } from './services/cart-gateway.service';
+import { OrderGatewayService } from './services/order-gateway.service';
+import { OrderGatewayController } from './controllers/order-gateway.controller';
 
 @Module({
   imports: [
@@ -57,6 +59,14 @@ import { CartGatewayService } from './services/cart-gateway.service';
           port: 4006,
         },
       },
+      {
+        name: 'ORDER_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: 'localhost',
+          port: 4007,
+        },
+      },
     ]),
 
     RedisModule,
@@ -66,6 +76,7 @@ import { CartGatewayService } from './services/cart-gateway.service';
     UserGatewayController,
     ProductsController,
     CartController,
+    OrderGatewayController,
   ],
   providers: [
     AuthGatewayService,
@@ -73,6 +84,7 @@ import { CartGatewayService } from './services/cart-gateway.service';
     UserGatewayService,
     ProductGatewayService,
     CartGatewayService,
+    OrderGatewayService,
   ],
 })
 export class ApiGatewayModule {}
