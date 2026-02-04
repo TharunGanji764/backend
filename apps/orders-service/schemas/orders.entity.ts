@@ -2,7 +2,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -47,6 +46,9 @@ export class Orders {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ type: 'varchar', nullable: false })
+  idempotency_key: string;
 
   @OneToMany(() => OrderItems, (items) => items?.order, {
     cascade: true,

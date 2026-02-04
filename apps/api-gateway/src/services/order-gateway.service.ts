@@ -8,9 +8,13 @@ export class OrderGatewayService {
     @Inject('ORDER_SERVICE')
     private readonly OrderServiceClient: ClientProxy,
   ) {}
-  async createOrder(userData: any, body: any) {
+  async createOrder(userData: any, body: any, idempotencyKey: any) {
     return await firstValueFrom(
-      this.OrderServiceClient.send('create_order', { userData, body }),
+      this.OrderServiceClient.send('create_order', {
+        userData,
+        body,
+        idempotencyKey,
+      }),
     );
   }
 }

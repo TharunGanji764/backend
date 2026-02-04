@@ -26,8 +26,22 @@ export class OrdersServiceService {
     private readonly userService: ClientProxy,
   ) {}
   async createOrder(data: any) {
-    const { sub: user_id, username, email, mobile } = data?.userData;
+    const { sub: user_id, username, mobile } = data?.userData;
     const { shippingAddressId } = data?.body;
+
+    const isOrderExist = await this.orderRepo.findOne({
+      where: {
+        idempotency_key: data?.idempotencyKey,
+      },
+    });
+    if (isOrderExist) {
+      return {
+        orderId: isOrderExist?.id,
+        status: isOrderExist?.payment_status,
+        totalAmount: isOrderExist?.total_amount,
+        orderNumber: isOrderExist?.order_number,
+      };
+    }
     const cartItems = await firstValueFrom(
       this.cartService.send('get_CartData', {
         user_id,
@@ -39,7 +53,7 @@ export class OrdersServiceService {
         shippingAddressId,
       }),
     );
-    const { cartId, items: cart } = cartItems;
+    const { items: cart } = cartItems;
     const totalAmount = cart?.reduce(
       (acc, item) => acc + item?.price * item?.quantity,
       0,
@@ -61,6 +75,7 @@ export class OrdersServiceService {
       currency: 'INR',
       status: OrderStatus?.CREATED,
       payment_status: PaymentStatus?.PENDING,
+      idempotency_key: data?.idempotencyKey,
     });
     await this.orderRepo.save(order);
     const orderStatusHistory = this.orderStatusHistory.create({
@@ -100,7 +115,8 @@ export class OrdersServiceService {
     });
     await this.orderAddress.save(orderAddress);
     return {
-      orderId,
+      orderId: order?.id,
+      orderNumber: orderId,
       status: PaymentStatus?.PENDING,
       totalAmount,
     };

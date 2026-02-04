@@ -10,10 +10,10 @@ export enum OrderStatus {
 }
 
 export enum PaymentStatus {
-  PENDING = 'PENDING',
-  SUCCESS = 'SUCCESS',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
+  PENDING = 'PAYMENT_PENDING',
+  SUCCESS = 'PAYMENT_SUCCESS',
+  FAILED = 'PAYMENT_FAILED',
+  REFUNDED = 'PAYMENT_REFUNDED',
 }
 
 export enum PaymentMethod {
