@@ -100,7 +100,7 @@ export class AuthGatewayController {
   }
 
   @Post('refresh')
-  async refreshToken(@Req() req) {
+  async refreshToken(@Req() req, @Res({ passthrough: true }) res: any) {
     const refreshToken = req.cookies.refreshToken;
     try {
       const response = await lastValueFrom(
@@ -109,6 +109,13 @@ export class AuthGatewayController {
           { refreshToken },
         ),
       );
+      const { accessToken } = response?.data;
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      });
       return response.data;
     } catch (err) {
       throw new HttpException(
@@ -130,8 +137,18 @@ export class AuthGatewayController {
           { userId: body?.userId, sessionId: body?.sessionId },
         ),
       );
-      res.clearCookie('access_token', { path: '/' });
-      res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
+      res.clearCookie('access_token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        path: '/',
+      });
+      res.clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        path: '/api/auth/refresh',
+      });
       return response.data;
     } catch (err) {
       throw new HttpException(

@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { OrderGatewayService } from '../services/order-gateway.service';
 import { User } from '../decorators/user.decorator';
 import { AuthGuard } from 'apps/api-gateway/lib/authguard';
@@ -15,5 +23,10 @@ export class OrderGatewayController {
       body,
       idempotencyKey,
     );
+  }
+
+  @Get(':orderId/payment')
+  async getPaymentStatus(@User() user: any, @Param('orderId') orderId: string) {
+    return await this.orderGatewayService.getPaymentStatus(orderId);
   }
 }

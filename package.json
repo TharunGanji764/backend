@@ -18,7 +18,8 @@
     "start:product-service": "nest start product-service --watch",
     "start:cart-service": "nest start cart-service --watch",
     "start:orders-service": "nest start orders-service --watch",
-    "start:all": "concurrently \"yarn start:api-gateway\" \"yarn start:auth-service\" \"yarn start:notification-service\" \"yarn start:user-service\" \"yarn start:product-service\" \"yarn start:cart-service\" \"yarn start:orders-service\""
+    "start:payment-service": "nest start payment-service --watch",
+    "start:all": "concurrently \"yarn start:api-gateway\" \"yarn start:auth-service\" \"yarn start:notification-service\" \"yarn start:user-service\" \"yarn start:product-service\" \"yarn start:cart-service\" \"yarn start:orders-service\" \"yarn start:payment-service\""
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
@@ -29,6 +30,7 @@
     "@nestjs/microservices": "^11.1.13",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
+    "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
@@ -39,8 +41,10 @@
     "ioredis": "^5.8.2",
     "nodemailer": "^7.0.12",
     "pg": "^8.16.3",
+    "raw-body": "^3.0.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "stripe": "^20.3.1",
     "typeorm": "^0.3.28",
     "uuid": "^13.0.0"
   },
@@ -50,6 +54,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@types/amqplib": "^0.10.8",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",

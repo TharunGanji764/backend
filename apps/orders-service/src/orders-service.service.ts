@@ -8,6 +8,7 @@ import { OrderStatus, PaymentStatus } from '../enums/enums';
 import { OrderStatusHistory } from '../schemas/order-status-history.entity';
 import { OrderItems } from '../schemas/order-items.entity';
 import { OrderAddress } from '../schemas/order-address.entity';
+import { RabbitmqService } from './rabbitmq/rabbitmq.service';
 
 @Injectable()
 export class OrdersServiceService {
@@ -24,6 +25,9 @@ export class OrdersServiceService {
     private orderAddress: Repository<OrderAddress>,
     @Inject('USERS_SERVICE')
     private readonly userService: ClientProxy,
+    private readonly rabbitMQClient: RabbitmqService,
+    @Inject('PAYMENT_SERVICE')
+    private readonly paymentService: ClientProxy,
   ) {}
   async createOrder(data: any) {
     const { sub: user_id, username, mobile } = data?.userData;
@@ -114,11 +118,28 @@ export class OrdersServiceService {
       order: order,
     });
     await this.orderAddress.save(orderAddress);
+
+    await this.rabbitMQClient.publish('order.created', {
+      orderId: order?.id,
+      orderNumber: orderId,
+      totalAmount,
+      currency: 'INR',
+      userId: user_id,
+    });
     return {
       orderId: order?.id,
       orderNumber: orderId,
       status: PaymentStatus?.PENDING,
       totalAmount,
     };
+  }
+
+  async getPaymentStatus(data: any) {
+    const { OrderId } = data;
+    return await firstValueFrom(
+      this.paymentService.send('get_payment_By_Id', {
+        OrderId,
+      }),
+    );
   }
 }

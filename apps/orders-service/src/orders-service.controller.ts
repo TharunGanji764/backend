@@ -10,4 +10,9 @@ export class OrdersServiceController {
   async createOrder(@Payload() data: any) {
     return await this.ordersServiceService.createOrder(data);
   }
+
+  @MessagePattern('get_payment_status')
+  async getPaymentStatus(@Payload() data: any) {
+    return await this.ordersServiceService.getPaymentStatus(data);
+  }
 }

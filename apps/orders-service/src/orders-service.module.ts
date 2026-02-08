@@ -9,6 +9,7 @@ import { OrderItems } from '../schemas/order-items.entity';
 import { OrderPayment } from '../schemas/order-payment';
 import { OrderStatusHistory } from '../schemas/order-status-history.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -53,7 +54,16 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           port: 4004,
         },
       },
+      {
+        name: 'PAYMENT_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: 'localhost',
+          port: 4008,
+        },
+      },
     ]),
+    RabbitmqModule,
   ],
   controllers: [OrdersServiceController],
   providers: [OrdersServiceService],

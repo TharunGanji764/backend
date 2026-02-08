@@ -17,4 +17,12 @@ export class OrderGatewayService {
       }),
     );
   }
+
+  async getPaymentStatus(OrderId: string) {
+    return await firstValueFrom(
+      this.OrderServiceClient.send('get_payment_status', {
+        OrderId,
+      }),
+    );
+  }
 }
