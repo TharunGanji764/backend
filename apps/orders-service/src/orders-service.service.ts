@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { Repository } from 'typeorm';
 import { Orders } from '../schemas/orders.entity';
@@ -11,7 +11,7 @@ import { OrderAddress } from '../schemas/order-address.entity';
 import { RabbitmqService } from './rabbitmq/rabbitmq.service';
 
 @Injectable()
-export class OrdersServiceService {
+export class OrdersServiceService implements OnModuleInit {
   constructor(
     @Inject('CART_SERVICE')
     private readonly cartService: ClientProxy,
@@ -29,6 +29,24 @@ export class OrdersServiceService {
     @Inject('PAYMENT_SERVICE')
     private readonly paymentService: ClientProxy,
   ) {}
+
+  async onModuleInit() {
+    const channel = await this.rabbitMQClient.getChannel();
+    await channel.prefetch(1);
+
+    await channel.consume('order.payment.result', async (msg) => {
+      if (!msg) return;
+      try {
+        const data = JSON.parse(msg.content.toString());
+        await this.consumePayment(data);
+        channel.ack(msg);
+      } catch (err) {
+        console.log('Consumer error', err);
+        channel.nack(msg, false, false);
+      }
+    });
+  }
+
   async createOrder(data: any) {
     const { sub: user_id, username, mobile } = data?.userData;
     const { shippingAddressId } = data?.body;
@@ -119,13 +137,15 @@ export class OrdersServiceService {
     });
     await this.orderAddress.save(orderAddress);
 
-    await this.rabbitMQClient.publish('order.created', {
-      orderId: order?.id,
-      orderNumber: orderId,
-      totalAmount,
-      currency: 'INR',
-      userId: user_id,
-    });
+    await firstValueFrom(
+      this.paymentService.send('create_payment', {
+        orderId: order?.id,
+        orderNumber: orderId,
+        totalAmount,
+        currency: 'INR',
+        userId: user_id,
+      }),
+    );
     return {
       orderId: order?.id,
       orderNumber: orderId,
@@ -136,10 +156,15 @@ export class OrdersServiceService {
 
   async getPaymentStatus(data: any) {
     const { OrderId } = data;
-    return await firstValueFrom(
+    const res = await firstValueFrom(
       this.paymentService.send('get_payment_By_Id', {
         OrderId,
       }),
     );
+    return res;
+  }
+
+  async consumePayment(data: any) {
+    console.log('data: ', data);
   }
 }
