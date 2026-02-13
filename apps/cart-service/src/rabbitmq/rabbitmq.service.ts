@@ -1,11 +1,10 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as amqp from 'amqplib';
-
 @Injectable()
 export class RabbitmqService implements OnModuleInit {
-  channel: amqp.Channel;
+  private channel: amqp.Channel;
   private ready: Promise<void>;
-  private resolveReady: () => void;
+  private resolveReady!: () => void;
   constructor() {
     this.ready = new Promise((res) => {
       this.resolveReady = res;
@@ -14,19 +13,17 @@ export class RabbitmqService implements OnModuleInit {
   async onModuleInit() {
     const connection = await amqp.connect('amqp://localhost:5672');
     this.channel = await connection.createChannel();
-
+    this.channel.on('return', (msg) => {
+      console.error(
+        'UNROUTABLE MESSAGE:',
+        msg.fields.routingKey,
+        msg.content.toString(),
+      );
+    });
     await this.channel.assertExchange('order.exchange', 'topic', {
       durable: true,
     });
-
-    await this.channel.assertQueue('payment.order.created', { durable: true });
     await this.channel.assertQueue('cart.status.result', { durable: true });
-
-    await this.channel.bindQueue(
-      'payment.order.created',
-      'order.exchange',
-      'order.created',
-    );
     await this.channel.bindQueue(
       'cart.status.result',
       'order.exchange',
@@ -34,14 +31,13 @@ export class RabbitmqService implements OnModuleInit {
     );
     this.resolveReady();
   }
-
   async publish(routingKey: string, payload: any) {
     await this.ready;
     this.channel.publish(
       'order.exchange',
       routingKey,
       Buffer.from(JSON.stringify(payload)),
-      { persistent: true },
+      { persistent: true, mandatory: true },
     );
   }
 

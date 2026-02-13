@@ -53,6 +53,10 @@ export class PaymentServiceService implements OnModuleInit {
         amount: data.totalAmount * 100,
         currency: data.currency || 'inr',
         automatic_payment_methods: { enabled: true },
+        metadata: {
+          userId: data.userId,
+          orderId: data.orderId,
+        },
       },
     );
 
@@ -83,6 +87,8 @@ export class PaymentServiceService implements OnModuleInit {
 
   async markSuccess(intent: any) {
     const paymentId = intent.id;
+    // const orderId = intent.metadata.orderId; will use this in future if needed
+    const userId = intent.metadata.userId;
 
     const payment = await this.paymentRepository.findOne({
       where: { payment_intent_id: paymentId },
@@ -110,6 +116,7 @@ export class PaymentServiceService implements OnModuleInit {
       amount: payment?.amount,
       provider: payment?.provider,
       paymentType: paymentType,
+      userId,
     };
     channel.publish(
       'order.exchange',

@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Cart } from '../schemas/cart.entity';
 import { CartItem } from '../schemas/cart-item.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         },
       },
     ]),
+    RabbitmqModule,
   ],
   controllers: [CartServiceController],
   providers: [CartServiceService],

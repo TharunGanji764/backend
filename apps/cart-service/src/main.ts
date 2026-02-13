@@ -3,6 +3,7 @@ import { CartServiceModule } from './cart-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
+  console.log('Cart service is listening on port 4006');
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     CartServiceModule,
     {
@@ -13,6 +14,5 @@ async function bootstrap() {
     },
   );
   await app.listen();
-  console.log('Cart service is listening on port 4006');
 }
 bootstrap();

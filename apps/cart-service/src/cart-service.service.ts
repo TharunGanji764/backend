@@ -4,15 +4,17 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Cart } from '../schemas/cart.entity';
 import { Repository } from 'typeorm';
+import { RabbitmqService } from './rabbitmq/rabbitmq.service';
 
 @Injectable()
-export class CartServiceService {
+export class CartServiceService implements OnModuleInit {
   constructor(
     @Inject('PRODUCT_SERVICE')
     private readonly productServiceClient: ClientProxy,
@@ -20,7 +22,25 @@ export class CartServiceService {
     private cartRepository: Repository<Cart>,
     @InjectRepository(CartItem)
     private cartItemsRepository: Repository<CartItem>,
+    private readonly rabbitMqClient: RabbitmqService,
   ) {}
+
+  async onModuleInit() {
+    const channel = await this.rabbitMqClient.getChannel();
+    await channel.prefetch(1);
+
+    await channel.consume('cart.status.result', async (msg) => {
+      if (!msg) return;
+      try {
+        const data = JSON.parse(msg.content.toString());
+        await this.clearCart(data?.userId);
+        channel.ack(msg);
+      } catch (err) {
+        console.log('Consumer error', err);
+        channel.nack(msg, false, false);
+      }
+    });
+  }
 
   async getCartItems(userData: any) {
     const cart = await this.cartRepository.findOne({
