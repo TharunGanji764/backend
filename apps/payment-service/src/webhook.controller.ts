@@ -30,8 +30,6 @@ export class PaymentsWebhookController {
     }
 
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
-    console.log('event: ', event);
-    console.log('paymentIntent: ', paymentIntent);
 
     if (event.type === 'payment_intent.succeeded') {
       await this.paymentsService.markSuccess(paymentIntent);

@@ -87,17 +87,48 @@ export class PaymentServiceService implements OnModuleInit {
     const payment = await this.paymentRepository.findOne({
       where: { payment_intent_id: paymentId },
     });
+    const chargeId = intent.latest_charge;
 
+    const charge = await this.stripeService.stripe.charges.retrieve(
+      chargeId as string,
+    );
+
+    const paymentType = charge.payment_method_details?.type;
+
+    if (!payment) return;
     if (payment?.status === PaymentStatus.SUCCESS) return;
-
-    if (payment?.id) {
+    if (payment?.order_id) {
       await this.paymentRepository.update(payment.id, {
         status: PaymentStatus.SUCCESS,
       });
     }
+    const channel = await this.rabbitMq.getChannel();
+    const payload = {
+      orderNumber: payment?.order_id,
+      paymentIntentId: payment?.payment_intent_id,
+      status: 'success',
+      amount: payment?.amount,
+      provider: payment?.provider,
+      paymentType: paymentType,
+    };
+    channel.publish(
+      'order.exchange',
+      'payment.success',
+      Buffer.from(JSON.stringify(payload)),
+      { persistent: true },
+    );
   }
 
   async markFailed(intent: any) {
-    const paymentId = intent.metadata.paymentId;
+    const paymentId = intent.id;
+    const payment = await this.paymentRepository.findOne({
+      where: { payment_intent_id: paymentId },
+    });
+    if (!payment) return;
+    if (payment?.order_id) {
+      await this.paymentRepository.update(payment.id, {
+        status: PaymentStatus.FAILED,
+      });
+    }
   }
 }

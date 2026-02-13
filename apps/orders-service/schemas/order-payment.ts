@@ -20,10 +20,10 @@ export class OrderPayment {
   order: Orders;
 
   @Column()
-  paymentProvider: string;
+  payment_provider: string;
 
   @Column()
-  paymentReference: string;
+  payment_reference: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
   amount: string;

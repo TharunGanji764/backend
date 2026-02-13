@@ -20,4 +20,5 @@ export enum PaymentMethod {
   STRIPE = 'STRIPE',
   COD = 'COD',
   RAZORPAY = 'RAZORPAY',
+  CARD = 'CARD',
 }

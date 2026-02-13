@@ -9,6 +9,7 @@ import { OrderStatusHistory } from '../schemas/order-status-history.entity';
 import { OrderItems } from '../schemas/order-items.entity';
 import { OrderAddress } from '../schemas/order-address.entity';
 import { RabbitmqService } from './rabbitmq/rabbitmq.service';
+import { OrderPayment } from '../schemas/order-payment';
 
 @Injectable()
 export class OrdersServiceService implements OnModuleInit {
@@ -23,6 +24,8 @@ export class OrdersServiceService implements OnModuleInit {
     private orderItems: Repository<OrderItems>,
     @InjectRepository(OrderAddress)
     private orderAddress: Repository<OrderAddress>,
+    @InjectRepository(OrderPayment)
+    private orderPayment: Repository<OrderPayment>,
     @Inject('USERS_SERVICE')
     private readonly userService: ClientProxy,
     private readonly rabbitMQClient: RabbitmqService,
@@ -165,6 +168,31 @@ export class OrdersServiceService implements OnModuleInit {
   }
 
   async consumePayment(data: any) {
-    console.log('data: ', data);
+    const orderData = await this.orderRepo.findOne({
+      where: {
+        order_number: data?.orderNumber,
+      },
+    });
+    if (!orderData) return;
+    const paymentStatus =
+      data?.status === 'success'
+        ? OrderStatus?.PAYMENT_SUCCESS
+        : OrderStatus?.PAYMENT_FAILED;
+    await this.orderRepo.update(orderData.id, {
+      payment_status: paymentStatus,
+      payment_method: data?.paymentType?.toUpperCase(),
+    });
+    const orderPayment = await this.orderPayment.create({
+      payment_provider: data?.provider,
+      amount: data?.amount,
+      order: { id: orderData?.id },
+      payment_reference: data?.paymentIntentId,
+      status: paymentStatus,
+    });
+    await this.orderPayment.save(orderPayment);
+    await this.orderStatusHistory.update(
+      { order: { id: orderData?.id } },
+      { status: paymentStatus },
+    );
   }
 }
