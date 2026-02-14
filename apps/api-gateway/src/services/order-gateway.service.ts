@@ -25,4 +25,13 @@ export class OrderGatewayService {
       }),
     );
   }
+
+  async retryPayment(orderId: String, idempotencyKey: string) {
+    return await firstValueFrom(
+      this.OrderServiceClient.send('retry_payment', {
+        orderId,
+        idempotencyKey,
+      }),
+    );
+  }
 }

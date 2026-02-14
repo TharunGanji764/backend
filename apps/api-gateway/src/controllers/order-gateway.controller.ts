@@ -26,7 +26,14 @@ export class OrderGatewayController {
   }
 
   @Get(':orderId/payment')
-  async getPaymentStatus(@User() user: any, @Param('orderId') orderId: string) {
+  async getPaymentStatus(@Param('orderId') orderId: string) {
     return await this.orderGatewayService.getPaymentStatus(orderId);
+  }
+
+  @Post(':orderId/retry-payment')
+  async retryPayment(@Param('orderId') orderId: string, @Req() req: any) {
+    const idempotencyKey = req.headers['idempotency-key'];
+
+    return await this.orderGatewayService.retryPayment(orderId, idempotencyKey);
   }
 }

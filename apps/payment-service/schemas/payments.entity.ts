@@ -12,7 +12,7 @@ export class Payments {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false, unique: true })
+  @Column({ nullable: false, unique: false })
   order_id: string;
 
   @Column({ nullable: true })

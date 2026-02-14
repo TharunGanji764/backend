@@ -7,6 +7,7 @@ export enum OrderStatus {
   INVENTORY_FAILED = 'INVENTORY_FAILED',
   ORDER_CONFIRMED = 'ORDER_CONFIRMED',
   ORDER_CANCELLED = 'ORDER_CANCELLED',
+  ORDER_FAILED = 'ORDER_FAILED',
 }
 
 export enum PaymentStatus {

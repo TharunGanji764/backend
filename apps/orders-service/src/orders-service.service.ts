@@ -53,7 +53,7 @@ export class OrdersServiceService implements OnModuleInit {
   async createOrder(data: any) {
     const { sub: user_id, username, mobile } = data?.userData;
     const { shippingAddressId } = data?.body;
-
+    console.log('data?.idempotencyKey', data?.idempotencyKey);
     const isOrderExist = await this.orderRepo.findOne({
       where: {
         idempotency_key: data?.idempotencyKey,
@@ -83,6 +83,7 @@ export class OrdersServiceService implements OnModuleInit {
       (acc, item) => acc + item?.price * item?.quantity,
       0,
     );
+    console.log('totalAmount: ', totalAmount);
     const orders = await this.orderRepo.count();
     if (!cartItems) {
       throw new RpcException({
@@ -147,6 +148,7 @@ export class OrdersServiceService implements OnModuleInit {
         totalAmount,
         currency: 'INR',
         userId: user_id,
+        isRetry: false,
       }),
     );
     return {
@@ -181,7 +183,7 @@ export class OrdersServiceService implements OnModuleInit {
     const orderStatus =
       data?.status === 'success'
         ? OrderStatus?.ORDER_CONFIRMED
-        : OrderStatus?.ORDER_CANCELLED;
+        : OrderStatus?.ORDER_FAILED;
     await this.orderRepo.update(orderData.id, {
       payment_status: paymentStatus,
       payment_method: data?.paymentType?.toUpperCase(),
@@ -199,5 +201,46 @@ export class OrdersServiceService implements OnModuleInit {
       { order: { id: orderData?.id } },
       { status: paymentStatus },
     );
+  }
+
+  async retryPayment(data: any) {
+    const { orderId, idempotencyKey } = data;
+    const isOrderExist = await this.orderRepo.findOne({
+      where: {
+        order_number: orderId,
+      },
+    });
+    if (!isOrderExist) {
+      throw new RpcException({
+        status: 404,
+        message: 'Order Not Found',
+      });
+    }
+    if (isOrderExist?.payment_status === PaymentStatus?.SUCCESS) {
+      throw new RpcException({
+        status: 400,
+        message: 'Payment already completed for this order',
+      });
+    }
+    if (isOrderExist?.status === OrderStatus?.ORDER_CANCELLED) {
+      throw new RpcException({
+        status: 400,
+        message: 'Order is cancelled, cannot retry payment',
+      });
+    }
+
+    await firstValueFrom(
+      this.paymentService.send('create_payment', {
+        orderId: isOrderExist?.id,
+        orderNumber: orderId,
+        totalAmount: isOrderExist?.total_amount,
+        currency: 'INR',
+        userId: isOrderExist?.user_id,
+        isRetry: true,
+      }),
+    );
+    return {
+      message: 'Payment retry initiated',
+    };
   }
 }

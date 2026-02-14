@@ -48,10 +48,15 @@ export class PaymentServiceService implements OnModuleInit {
       },
     });
 
-    if (existing) {
-      return existing;
+    if (existing && data?.isRetry) {
+      return {
+        paymentId: existing?.payment_intent_id,
+        clientSecret: existing?.payment_secret_key,
+        amount: existing?.amount,
+        currency: existing?.currency,
+        orderId: existing?.order_id,
+      };
     }
-
     const payment = await this.paymentRepository.save(
       this.paymentRepository.create({
         order_id: orderId,

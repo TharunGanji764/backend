@@ -15,4 +15,9 @@ export class OrdersServiceController {
   async getPaymentStatus(@Payload() data: any) {
     return await this.ordersServiceService.getPaymentStatus(data);
   }
+
+  @MessagePattern('retry_payment')
+  async retryPayment(@Payload() data: any) {
+    return await this.ordersServiceService.retryPayment(data);
+  }
 }
