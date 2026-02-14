@@ -33,7 +33,9 @@ export class CartServiceService implements OnModuleInit {
       if (!msg) return;
       try {
         const data = JSON.parse(msg.content.toString());
-        await this.clearCart(data?.userId);
+        if (data?.status === 'success') {
+          await this.clearCart(data?.userId);
+        }
         channel.ack(msg);
       } catch (err) {
         console.log('Consumer error', err);
@@ -48,10 +50,10 @@ export class CartServiceService implements OnModuleInit {
     });
 
     if (!cart) {
-      throw new RpcException({
+      return {
         status: 404,
         message: 'No cart available',
-      });
+      };
     }
     const cartItems = await this.cartItemsRepository.find({
       where: { cart: { id: cart?.id } },

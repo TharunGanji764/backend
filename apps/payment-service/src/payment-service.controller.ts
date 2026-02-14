@@ -14,6 +14,6 @@ export class PaymentServiceController {
   @MessagePattern('get_payment_By_Id')
   async getPaymentById(@Payload() data: any) {
     const { OrderId } = data;
-    return await this.paymentServiceService.getPaymentById(OrderId);
+    return await this.paymentServiceService.getPaymentByOrderId(OrderId);
   }
 }

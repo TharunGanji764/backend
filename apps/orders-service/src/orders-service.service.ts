@@ -170,7 +170,7 @@ export class OrdersServiceService implements OnModuleInit {
   async consumePayment(data: any) {
     const orderData = await this.orderRepo.findOne({
       where: {
-        order_number: data?.orderNumber,
+        order_number: data?.orderId,
       },
     });
     if (!orderData) return;
@@ -178,9 +178,14 @@ export class OrdersServiceService implements OnModuleInit {
       data?.status === 'success'
         ? OrderStatus?.PAYMENT_SUCCESS
         : OrderStatus?.PAYMENT_FAILED;
+    const orderStatus =
+      data?.status === 'success'
+        ? OrderStatus?.ORDER_CONFIRMED
+        : OrderStatus?.ORDER_CANCELLED;
     await this.orderRepo.update(orderData.id, {
       payment_status: paymentStatus,
       payment_method: data?.paymentType?.toUpperCase(),
+      status: orderStatus,
     });
     const orderPayment = await this.orderPayment.create({
       payment_provider: data?.provider,

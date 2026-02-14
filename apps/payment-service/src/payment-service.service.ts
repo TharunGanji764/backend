@@ -40,58 +40,83 @@ export class PaymentServiceService implements OnModuleInit {
   }
 
   async createPaymentIntent(data: any) {
+    const orderId = data?.orderNumber;
     const existing = await this.paymentRepository.findOne({
-      where: { order_id: data?.orderNumber },
+      where: {
+        order_id: orderId,
+        status: PaymentStatus.INITIATED,
+      },
     });
 
     if (existing) {
       return existing;
     }
 
-    const paymentIntent = await this.stripeService.stripe.paymentIntents.create(
-      {
-        amount: data.totalAmount * 100,
-        currency: data.currency || 'inr',
-        automatic_payment_methods: { enabled: true },
-        metadata: {
-          userId: data.userId,
-          orderId: data.orderId,
-        },
-      },
+    const payment = await this.paymentRepository.save(
+      this.paymentRepository.create({
+        order_id: orderId,
+        amount: data?.totalAmount,
+        currency: data?.currency || 'inr',
+        status: PaymentStatus.INITIATED,
+        provider: 'stripe',
+      }),
     );
 
-    const payment = this.paymentRepository.create({
-      order_id: data?.orderNumber,
-      amount: data?.totalAmount,
-      currency: data?.currency,
-      status: PaymentStatus.INITIATED,
-      provider: 'stripe',
-      payment_intent_id: paymentIntent.id,
-      payment_secret_key: paymentIntent.client_secret ?? undefined,
-    });
+    try {
+      const paymentIntent =
+        await this.stripeService.stripe.paymentIntents.create({
+          amount: data?.totalAmount * 100,
+          currency: data?.currency || 'inr',
+          automatic_payment_methods: { enabled: true },
+          metadata: {
+            orderId: orderId,
+            paymentId: payment.id,
+            userId: data.userId,
+          },
+        });
 
-    return await this.paymentRepository.save(payment);
+      await this.paymentRepository.update(payment.id, {
+        payment_intent_id: paymentIntent.id,
+        payment_secret_key: paymentIntent.client_secret ?? undefined,
+      });
+
+      return paymentIntent;
+    } catch (err) {
+      console.error('Stripe intent creation failed', err);
+
+      await this.paymentRepository.update(payment.id, {
+        status: PaymentStatus.FAILED,
+      });
+
+      throw err;
+    }
   }
 
-  async getPaymentById(orderId: any) {
+  async getPaymentByOrderId(orderId: string) {
     const paymentData = await this.paymentRepository.findOne({
-      where: { order_id: orderId },
+      where: {
+        order_id: orderId,
+        status: PaymentStatus.INITIATED,
+      },
+      order: { created_at: 'DESC' },
     });
 
+    if (!paymentData) return null;
+
     return {
-      paymentId: paymentData?.order_id,
+      paymentId: paymentData?.payment_intent_id,
       clientSecret: paymentData?.payment_secret_key,
       amount: paymentData?.amount,
+      currency: paymentData?.currency,
+      orderId: paymentData?.order_id,
     };
   }
 
   async markSuccess(intent: any) {
-    const paymentId = intent.id;
-    // const orderId = intent.metadata.orderId; will use this in future if needed
-    const userId = intent.metadata.userId;
+    const paymentIntentId = intent.id;
 
     const payment = await this.paymentRepository.findOne({
-      where: { payment_intent_id: paymentId },
+      where: { payment_intent_id: paymentIntentId },
     });
     const chargeId = intent.latest_charge;
 
@@ -102,22 +127,25 @@ export class PaymentServiceService implements OnModuleInit {
     const paymentType = charge.payment_method_details?.type;
 
     if (!payment) return;
-    if (payment?.status === PaymentStatus.SUCCESS) return;
-    if (payment?.order_id) {
-      await this.paymentRepository.update(payment.id, {
-        status: PaymentStatus.SUCCESS,
-      });
-    }
+
+    if (payment.status === PaymentStatus.SUCCESS) return;
+
+    await this.paymentRepository.update(payment.id, {
+      status: PaymentStatus.SUCCESS,
+    });
+
     const channel = await this.rabbitMq.getChannel();
+
     const payload = {
-      orderNumber: payment?.order_id,
-      paymentIntentId: payment?.payment_intent_id,
+      orderId: payment.order_id,
+      paymentId: payment.id,
+      paymentIntentId: payment.payment_intent_id,
+      amount: payment.amount,
+      provider: payment.provider,
       status: 'success',
-      amount: payment?.amount,
-      provider: payment?.provider,
-      paymentType: paymentType,
-      userId,
+      paymentType,
     };
+
     channel.publish(
       'order.exchange',
       'payment.success',
@@ -127,15 +155,45 @@ export class PaymentServiceService implements OnModuleInit {
   }
 
   async markFailed(intent: any) {
-    const paymentId = intent.id;
+    const paymentIntentId = intent.id;
+
     const payment = await this.paymentRepository.findOne({
-      where: { payment_intent_id: paymentId },
+      where: { payment_intent_id: paymentIntentId },
     });
+
+    const chargeId = intent.latest_charge;
+
+    const charge = await this.stripeService.stripe.charges.retrieve(
+      chargeId as string,
+    );
+
+    const paymentType = charge.payment_method_details?.type;
+
     if (!payment) return;
-    if (payment?.order_id) {
-      await this.paymentRepository.update(payment.id, {
-        status: PaymentStatus.FAILED,
-      });
-    }
+
+    if (payment.status === PaymentStatus.FAILED) return;
+
+    await this.paymentRepository.update(payment.id, {
+      status: PaymentStatus.FAILED,
+    });
+
+    const channel = await this.rabbitMq.getChannel();
+
+    const payload = {
+      orderId: payment.order_id,
+      paymentId: payment.id,
+      paymentIntentId: payment.payment_intent_id,
+      amount: payment.amount,
+      provider: payment.provider,
+      status: 'failed',
+      paymentType,
+    };
+
+    channel.publish(
+      'order.exchange',
+      'payment.failed',
+      Buffer.from(JSON.stringify(payload)),
+      { persistent: true },
+    );
   }
 }
