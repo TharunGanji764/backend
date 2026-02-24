@@ -9,6 +9,8 @@ import { ProductImages } from '../schemas/product-images.entity';
 import { ProductMeta } from '../schemas/product-meta.entity';
 import { ProductReviews } from '../schemas/product-reviews.entity';
 import { ProductTags } from '../schemas/product-tags.entity';
+import { ProductSearch } from '../schemas/product-search.entity';
+import { WishListEntity } from '../schemas/wishList.entity';
 
 @Module({
   imports: [
@@ -25,8 +27,9 @@ import { ProductTags } from '../schemas/product-tags.entity';
         port: Number(config.get('POSTGRES_DB_PORT')),
         username: config.get('POSTGRES_DB_USERNAME'),
         password: config.get('POSTGRES_DB_PASSWORD'),
-        synchronize: true,
         autoLoadEntities: true,
+        synchronize: false,
+        migrationsRun: false,
         database: config.get('POSTGRES_DB_NAME'),
       }),
     }),
@@ -37,6 +40,8 @@ import { ProductTags } from '../schemas/product-tags.entity';
       ProductMeta,
       ProductReviews,
       ProductTags,
+      ProductSearch,
+      WishListEntity,
     ]),
   ],
   controllers: [ProductServiceController],

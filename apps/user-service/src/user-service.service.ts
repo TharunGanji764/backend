@@ -9,6 +9,7 @@ import { Users } from '../schemas/user-schema';
 import { Repository } from 'typeorm';
 import { Address } from '../schemas/adress.schema';
 import { AddressType } from '../types/address.type';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class UserServiceService {
@@ -45,6 +46,19 @@ export class UserServiceService {
       where: {
         user: { user_id: userId },
       },
+      select: [
+        'id',
+        'address_line',
+        'city',
+        'state',
+        'pincode',
+        'is_default',
+        'full_name',
+        'phone_number',
+        'landmark',
+        'tag',
+      ],
+      order: { id: 'ASC' },
     });
     if (!userAddress) {
       throw new NotFoundException('Addressess not found');
@@ -65,9 +79,56 @@ export class UserServiceService {
       state: address.state,
       pincode: address.pincode.toString(),
       is_default: address.is_default,
+      full_name: address.full_name,
+      phone_number: address.phone_number,
+      landmark: address.landmark,
+      tag: address.tag,
       user: { user_id: userId },
     });
     await this.addressRepository.save(userAddress);
     return { message: 'Address added successfully' };
+  }
+
+  async deleteUserAddress(data: any) {
+    const { addressId } = data;
+    const result = await this.addressRepository.delete({ id: addressId });
+    if (!result.affected) {
+      throw new RpcException({
+        message: 'Address Not Found',
+      });
+    }
+
+    return { message: 'Address Deleted Successfully' };
+  }
+
+  async updateUserAddress(data: any) {
+    const { userId, address } = data?.payload;
+    const getAddress = await this.addressRepository.findOne({
+      where: { id: address?.id },
+    });
+    if (!getAddress) {
+      throw new RpcException({
+        message: 'Address Not Found',
+      });
+    }
+    const userAddressess = await this.addressRepository.findOne({
+      where: { user: { user_id: userId }, is_default: true },
+    });
+
+    if (userAddressess?.is_default) {
+      const previousAddress = {
+        ...userAddressess,
+        is_default: false,
+      };
+      await this.addressRepository.save(previousAddress);
+    }
+    const updatedAddress = await this.addressRepository.merge(
+      getAddress,
+      address,
+    );
+    await this.addressRepository.save(updatedAddress);
+    return {
+      message: 'Address Updated Successfully',
+    };
   }
 }

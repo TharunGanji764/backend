@@ -2,12 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Products } from '../schemas/products.entity';
 import { Repository } from 'typeorm';
+import { ProductSearch } from '../schemas/product-search.entity';
+import { WishListEntity } from '../schemas/wishList.entity';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ProductServiceService {
   constructor(
     @InjectRepository(Products)
     private productsRepository: Repository<Products>,
+    @InjectRepository(ProductSearch)
+    private productSearchRepository: Repository<ProductSearch>,
+    @InjectRepository(WishListEntity)
+    private wishListRepository: Repository<WishListEntity>,
   ) {}
 
   async getProducts(page: number, limit: number) {
@@ -48,5 +55,70 @@ export class ProductServiceService {
       .where('product.sku=:id', { id })
       .getOne();
     return productDetails;
+  }
+
+  async getSearchData(filters: any) {
+    const { query } = filters;
+    const filteredData = await this.productSearchRepository
+      .createQueryBuilder('data')
+      .select(['data.product_name', 'data.category', 'data.product_id'])
+      .where(
+        `(data.product_name ILIKE :ilikeQuery OR data.product_name % :rawQuery)`,
+        {
+          ilikeQuery: `%${query}%`,
+          rawQuery: query,
+        },
+      )
+      .orderBy('similarity(data.product_name,:rawQuery)', 'DESC')
+      .getMany();
+    return filteredData;
+  }
+
+  async addToWishList(data: any) {
+    const { productId, sub: userId } = data;
+    const isItemAvailableInWishList = await this.wishListRepository.findOne({
+      where: { product_id: productId },
+    });
+    const productData = await this.productsRepository.findOne({
+      where: { sku: productId },
+      select: [
+        'thumbnail',
+        'sku',
+        'price',
+        'discount_percentage',
+        'discounted_price',
+        'rating',
+        'title',
+      ],
+    });
+    if (!productData) {
+      throw new RpcException({
+        message: 'Product is  Not Available',
+      });
+    }
+    if (isItemAvailableInWishList) {
+      throw new RpcException({
+        message: 'Item Already available in wishlist',
+      });
+    }
+    const wishListItem = await this.wishListRepository.create({
+      product_id: productData?.sku,
+      discount_percentage: productData?.discount_percentage,
+      discounted_price: productData?.discounted_price,
+      product_image: productData?.thumbnail,
+      product_name: productData?.title,
+      product_price: productData?.price,
+      product_rating: productData?.rating,
+      user_id: userId,
+    });
+    await this.wishListRepository.save(wishListItem);
+    return wishListItem;
+  }
+
+  async getWishList(userId: string) {
+    const [wishListData, count] = await this.wishListRepository.findAndCount({
+      where: { user_id: userId },
+    });
+    return { data: wishListData, count };
   }
 }

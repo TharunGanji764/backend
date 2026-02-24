@@ -23,6 +23,23 @@ export class ProductServiceController {
 
   @MessagePattern('get_ProductData')
   async getProductData(@Payload() data: { product_id: string }) {
-    return await this.productServiceService.getProductDataForAddToCart(data?.product_id);
+    return await this.productServiceService.getProductDataForAddToCart(
+      data?.product_id,
+    );
+  }
+
+  @MessagePattern('get_search_data')
+  async getSearchData(@Payload() data: { query: string }) {
+    return await this.productServiceService.getSearchData(data);
+  }
+
+  @MessagePattern('add_to_wishlist')
+  async addToWishList(@Payload() data: any) {
+    return await this.productServiceService.addToWishList(data);
+  }
+
+  @MessagePattern('get_wishlist')
+  async getWishList(@Payload() data: any) {
+    return await this.productServiceService.getWishList(data);
   }
 }

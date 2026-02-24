@@ -16,4 +16,16 @@ export class AddressDto {
 
   @IsBoolean()
   is_default: boolean;
+
+  @IsString()
+  full_name: string;
+
+  @IsString()
+  phone_number: string;
+
+  @IsString()
+  landmark: string;
+
+  @IsString()
+  tag: string;
 }

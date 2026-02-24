@@ -19,7 +19,9 @@
     "start:cart-service": "nest start cart-service --watch",
     "start:orders-service": "nest start orders-service --watch",
     "start:payment-service": "nest start payment-service --watch",
-    "start:all": "concurrently \"yarn start:api-gateway\" \"yarn start:auth-service\" \"yarn start:notification-service\" \"yarn start:user-service\" \"yarn start:product-service\" \"yarn start:cart-service\" \"yarn start:orders-service\" \"yarn start:payment-service\""
+    "start:all": "concurrently \"yarn start:api-gateway\" \"yarn start:auth-service\" \"yarn start:notification-service\" \"yarn start:user-service\" \"yarn start:product-service\" \"yarn start:cart-service\" \"yarn start:orders-service\" \"yarn start:payment-service\"",
+    "migration:run": "yarn typeorm-ts-node-commonjs migration:run -d apps/product-service/src/data-source.ts",
+    "migration:generate": "yarn typeorm-ts-node-commonjs migration:create apps/product-service/src/migrations/SearchMigration"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

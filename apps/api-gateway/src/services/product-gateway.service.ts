@@ -19,4 +19,8 @@ export class ProductGatewayService {
   async getProductDetails(id: string) {
     return await this.productClient.send('get_product_details', { id });
   }
+
+  async getSearchData(query: string) {
+    return await this.productClient.send('get_search_data', { query });
+  }
 }

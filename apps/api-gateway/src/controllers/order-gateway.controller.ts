@@ -36,4 +36,10 @@ export class OrderGatewayController {
 
     return await this.orderGatewayService.retryPayment(orderId, idempotencyKey);
   }
+
+  @Get('get-orders')
+  async getUserTotalOrders(@User() user: any) {
+    const { sub: userId } = user;
+    return await this.orderGatewayService.getUserTotalOrders(userId);
+  }
 }

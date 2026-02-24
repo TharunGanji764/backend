@@ -15,6 +15,8 @@ import { CartController } from './controllers/cart-gateway.controller';
 import { CartGatewayService } from './services/cart-gateway.service';
 import { OrderGatewayService } from './services/order-gateway.service';
 import { OrderGatewayController } from './controllers/order-gateway.controller';
+import { WishListGatewayService } from './services/wishlist-gateway.service';
+import { WishListController } from './controllers/wishlist-gateway.controller';
 
 @Module({
   imports: [
@@ -77,6 +79,7 @@ import { OrderGatewayController } from './controllers/order-gateway.controller';
     ProductsController,
     CartController,
     OrderGatewayController,
+    WishListController,
   ],
   providers: [
     AuthGatewayService,
@@ -85,6 +88,7 @@ import { OrderGatewayController } from './controllers/order-gateway.controller';
     ProductGatewayService,
     CartGatewayService,
     OrderGatewayService,
+    WishListGatewayService,
   ],
 })
 export class ApiGatewayModule {}

@@ -20,4 +20,9 @@ export class OrdersServiceController {
   async retryPayment(@Payload() data: any) {
     return await this.ordersServiceService.retryPayment(data);
   }
+
+  @MessagePattern('get_user_orders')
+  async getUserTotalOrders(@Payload() data: any) {
+    return await this.ordersServiceService.getUserTotalOrders(data);
+  }
 }

@@ -243,4 +243,12 @@ export class OrdersServiceService implements OnModuleInit {
       message: 'Payment retry initiated',
     };
   }
+
+  async getUserTotalOrders(data: any) {
+    const { userId } = data;
+    const ordersList = await this.orderRepo.find({
+      where: { user_id: userId },
+    });
+    return ordersList;
+  }
 }

@@ -34,4 +34,12 @@ export class OrderGatewayService {
       }),
     );
   }
+
+  async getUserTotalOrders(userId: string) {
+    return await firstValueFrom(
+      this.OrderServiceClient.send('get_user_orders', {
+        userId,
+      }),
+    );
+  }
 }

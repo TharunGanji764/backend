@@ -29,4 +29,12 @@ export class UserGatewayService {
       address,
     });
   }
+
+  async deleteUserAddress(addressId: any) {
+    return await this.userClient.send('delete_user_adress', addressId);
+  }
+
+  async updateUserAddress(data: any) {
+    return await this.userClient.send('update_user_address', data);
+  }
 }

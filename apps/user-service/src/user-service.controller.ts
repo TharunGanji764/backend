@@ -26,4 +26,14 @@ export class UserServiceController {
   async getAddUserAddress(data: any) {
     return await this.userServiceService.addUserAddress(data);
   }
+
+  @MessagePattern('delete_user_adress')
+  async deleteUserAddress(data: any) {
+    return await this.userServiceService.deleteUserAddress(data);
+  }
+
+  @MessagePattern('update_user_address')
+  async updateUserAddress(data: any) {
+    return await this.userServiceService.updateUserAddress(data);
+  }
 }

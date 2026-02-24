@@ -4,4 +4,8 @@ export type AddressType = {
   state: string;
   pincode: number;
   is_default: boolean;
+  full_name: string;
+  phone_number: string;
+  landmark: string;
+  tag: string;
 };

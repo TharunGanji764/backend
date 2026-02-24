@@ -1,4 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Users } from './user-schema';
 
 @Entity('addresses')
@@ -20,6 +26,18 @@ export class Address {
 
   @Column({ default: false })
   is_default: boolean;
+
+  @Column({ nullable: true })
+  full_name: string;
+
+  @Column({ nullable: true })
+  phone_number: string;
+
+  @Column({ nullable: true })
+  landmark: string;
+
+  @Column({ nullable: true })
+  tag: string;
 
   @ManyToOne(() => Users, (user) => user.address, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
