@@ -27,4 +27,9 @@ export class ProductsController {
   async getProductDetails(@Param('id') id: string) {
     return await this.productGatewayService.getProductDetails(id);
   }
+
+  @Get('get-category/:category')
+  async getProductsByCategory(@Param('category') category: string) {
+    return await this.productGatewayService.getProductsByCategory(category);
+  }
 }

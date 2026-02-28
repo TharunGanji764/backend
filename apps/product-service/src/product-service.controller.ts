@@ -42,4 +42,9 @@ export class ProductServiceController {
   async getWishList(@Payload() data: any) {
     return await this.productServiceService.getWishList(data);
   }
+
+  @MessagePattern('get_products_by_category')
+  async getProductsByCategory(@Payload() data: any) {
+    return await this.productServiceService.getProductsByCategory(data);
+  }
 }

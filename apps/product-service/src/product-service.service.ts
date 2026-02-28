@@ -121,4 +121,25 @@ export class ProductServiceService {
     });
     return { data: wishListData, count };
   }
+
+  async getProductsByCategory(data: any) {
+    const { category } = data;
+    const productsByCategory = await this.productsRepository
+      .createQueryBuilder('product')
+      .select([
+        'product.sku',
+        'product.title',
+        'product.category',
+        'product.brand',
+        'product.price',
+        'product.discount_percentage',
+        'product.discounted_price',
+        'product.rating',
+        'product.thumbnail',
+        'product.availability_status',
+      ])
+      .where(`product.category %:category`, { category })
+      .getMany();
+    return productsByCategory;
+  }
 }

@@ -248,6 +248,8 @@ export class OrdersServiceService implements OnModuleInit {
     const { userId } = data;
     const ordersList = await this.orderRepo.find({
       where: { user_id: userId },
+      order: { created_at: 'DESC' },
+      relations: ['Items'],
     });
     return ordersList;
   }
