@@ -16,4 +16,7 @@ export class Auth {
 
   @Column()
   mobile: string;
+
+  @Column({ default: 'CUSTOMER' })
+  role: string;
 }

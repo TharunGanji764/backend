@@ -20,6 +20,7 @@ export class ApiGatewayExceptionFilter implements ExceptionFilter {
       return response.status(error.status || 500).json({
         success: false,
         message: error.message || 'Internal service error',
+        status: error?.status,
       });
     }
 
@@ -27,6 +28,7 @@ export class ApiGatewayExceptionFilter implements ExceptionFilter {
       return response.status(HttpStatus.SERVICE_UNAVAILABLE).json({
         success: false,
         message: 'Service temporarily unavailable',
+        status: HttpStatus.SERVICE_UNAVAILABLE,
       });
     }
 
@@ -37,25 +39,28 @@ export class ApiGatewayExceptionFilter implements ExceptionFilter {
       return response.status(HttpStatus.UNAUTHORIZED).json({
         success: false,
         message: 'Invalid or expired token',
+        status: HttpStatus?.UNAUTHORIZED,
       });
     }
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      const responseData = exception.getResponse();
+      const responseData = exception.getResponse() as HttpException['response'];
 
       return response.status(status).json({
         success: false,
         message:
           typeof responseData === 'string'
             ? responseData
-            : (responseData as any)?.message || exception.message,
+            : responseData?.message || exception.message,
+        status: responseData?.statusCode,
       });
     }
 
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: exception,
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
     });
   }
 }

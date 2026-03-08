@@ -3,4 +3,5 @@ export type ProfileData = {
   username: string;
   mobile: string;
   userid: string;
+  role: string;
 };

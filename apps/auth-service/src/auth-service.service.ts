@@ -42,7 +42,7 @@ export class AuthServiceService {
   ) {}
 
   async registerUser(userData: RegisterDTO) {
-    const { emailId, password, username, mobile } = userData;
+    const { emailId, password, username, mobile, role } = userData;
     const isUserExist = await this.userRepository.findOne({
       where: { emailId: emailId },
     });
@@ -59,6 +59,7 @@ export class AuthServiceService {
       password: hashedPassword,
       username,
       mobile,
+      role,
     };
     await this.redisOtpClient.set(
       `otp:register:${emailId}`,
@@ -96,6 +97,34 @@ export class AuthServiceService {
     await this.userRepository.create(JSON.parse(user));
     await this.userRepository.save(JSON.parse(user));
     return { message: 'User registered successfully ' };
+  }
+
+  async resendOtp(body: any) {
+    const { emailId } = body;
+    const isUserExist = await this.redisTemporaryUserClient.get(
+      `tempuser:register:${emailId}`,
+    );
+    if (!isUserExist) {
+      throw new NotFoundException(
+        'No registration process found for this email',
+      );
+    }
+    const existingOtp = await this.redisOtpClient.get(
+      `otp:register:${emailId}`,
+    );
+    if (existingOtp) {
+      await this.redisOtpClient.del(`otp:register:${emailId}`);
+    }
+    const otp = this.otpGenerator.generate();
+    const hashedOtp = await this.hashService.hash(String(otp), 10);
+    await this.redisOtpClient.set(
+      `otp:register:${emailId}`,
+      hashedOtp,
+      'EX',
+      300,
+    );
+    this.emailChannel.send(emailId, otp);
+    return { message: 'Otp resent to your email successfully' };
   }
 
   async loginUser(userData: LoginDTO) {
@@ -141,6 +170,7 @@ export class AuthServiceService {
       email: isUserExist.emailId,
       sessionId,
       mobile: isUserExist?.mobile,
+      role: isUserExist?.role,
     };
     const accessToken = await this.tokenService.generateAccessToken(payload);
     const refreshToken = await this.tokenService.generateRefreshToken(payload);
@@ -149,6 +179,7 @@ export class AuthServiceService {
       refreshToken,
       userId: isUserExist.userid,
     };
+    console.log('session: ', session);
     await this.redisSessionManagement.set(
       `sessionId:${sessionId}`,
       JSON.stringify(session),

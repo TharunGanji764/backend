@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
+import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { RegisterDTO } from '../../dto/register.dto';
 import { verifyOtpDTO } from '../../dto/verify-otp.dto';
 import { LoginDTO } from '../../dto/login.dto';
@@ -40,7 +40,7 @@ export class AuthGatewayController {
   @Post('verify-otp')
   async verifyOtp(@Body() body: verifyOtpDTO) {
     try {
-      const response = await lastValueFrom(
+      const response = await firstValueFrom(
         this.httpService.post(
           `${process.env.NEXT_PUBLIC_API_AUTH_URL}/auth/verify-otp`,
           body,
@@ -48,6 +48,25 @@ export class AuthGatewayController {
       );
 
       return response.data;
+    } catch (err) {
+      throw new HttpException(
+        err.response?.data?.message || 'Auth service error',
+        err.response?.status || 500,
+      );
+    }
+  }
+
+  @Post('resend-otp')
+  async resendOtp(@Body() body: { emailId: string }) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${process.env.NEXT_PUBLIC_API_AUTH_URL}/auth/resend-otp`,
+          body,
+        ),
+      );
+
+      return response?.data;
     } catch (err) {
       throw new HttpException(
         err.response?.data?.message || 'Auth service error',
@@ -71,7 +90,7 @@ export class AuthGatewayController {
       const { accessToken, refreshToken, sub, ...rest } = response.data;
       const userId = sub;
 
-      res.cookie('refreshToken', refreshToken, {
+      res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: false,
         sameSite: 'lax',

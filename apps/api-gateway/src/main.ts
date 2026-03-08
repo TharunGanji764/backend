@@ -3,10 +3,12 @@ import { ApiGatewayModule } from './api-gateway.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ApiGatewayExceptionFilter } from '../lib/exception-filter';
 import cookieParser from 'cookie-parser';
+import { ResponseInterceptor } from '../lib/response.interceptor';
 
 async function bootstrap() {
   console.log('🚀 api-gateway SERVICE bootstrap started');
   const app = await NestFactory.create(ApiGatewayModule);
+  app.useGlobalInterceptors(new ResponseInterceptor());
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new ApiGatewayExceptionFilter());
   app.use(cookieParser());

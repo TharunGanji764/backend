@@ -1,6 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { UserServiceService } from './user-service.service';
-import { EventPattern, MessagePattern } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { ProfileDTO } from '../dto/profile.dto';
 
 @Controller()
@@ -8,7 +8,7 @@ export class UserServiceController {
   constructor(private readonly userServiceService: UserServiceService) {}
 
   @EventPattern('create-profile')
-  async createProfile(data: ProfileDTO) {
+  async createProfile(@Payload() data: any) {
     return await this.userServiceService.createProfile(data);
   }
 

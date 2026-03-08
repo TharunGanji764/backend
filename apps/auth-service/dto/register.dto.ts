@@ -15,4 +15,7 @@ export class RegisterDTO {
 
   @IsString()
   username: string;
+
+  @IsString()
+  role: string;
 }

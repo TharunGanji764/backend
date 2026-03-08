@@ -21,12 +21,14 @@ export class UserServiceService {
   ) {}
 
   async createProfile(data: ProfileData) {
-    const { emailId, username, mobile, userid } = data;
+    console.log('data:2', data);
+    const { emailId, username, mobile, userid, role } = data;
     const userProfileData = await this.userRepository.create({
       user_id: userid,
       name: username,
       phone: mobile,
       email_id: emailId,
+      role: role,
     });
     await this.userRepository.save(userProfileData);
   }

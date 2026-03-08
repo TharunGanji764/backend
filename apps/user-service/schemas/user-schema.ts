@@ -29,4 +29,7 @@ export class Users {
 
   @OneToMany(() => Address, (address) => address.user)
   address: Address[];
+
+  @Column({ nullable: true ,default:"CUSTOMER"})
+  role: string;
 }

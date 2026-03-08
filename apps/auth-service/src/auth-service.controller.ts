@@ -18,6 +18,11 @@ export class AuthServiceController {
     return await this.authServiceService.verifyOtp(UserData);
   }
 
+  @Post('resend-otp')
+  async resendOtp(@Body() body: { emailId: string }) {
+    return await this.authServiceService.resendOtp(body);
+  }
+
   @Post('login')
   async login(@Body() userData: LoginDTO) {
     return await this.authServiceService.loginUser(userData);
