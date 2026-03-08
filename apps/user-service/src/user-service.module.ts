@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Users } from '../schemas/user-schema';
 import { Address } from '../schemas/adress.schema';
+import { SellerProfile } from '../schemas/seller.entity';
+import { UserRoles } from '../schemas/user-roles.entity';
 
 @Module({
   imports: [
@@ -25,7 +27,7 @@ import { Address } from '../schemas/adress.schema';
         database: configService.get('POSTGRES_DB_NAME'),
       }),
     }),
-    TypeOrmModule.forFeature([Users, Address]),
+    TypeOrmModule.forFeature([Users, Address, SellerProfile, UserRoles]),
   ],
   controllers: [UserServiceController],
   providers: [UserServiceService],

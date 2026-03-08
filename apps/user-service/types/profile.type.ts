@@ -4,4 +4,5 @@ export type ProfileData = {
   mobile: string;
   userid: string;
   role: string;
+  storeName: string;
 };

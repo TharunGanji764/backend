@@ -10,6 +10,8 @@ import { Repository } from 'typeorm';
 import { Address } from '../schemas/adress.schema';
 import { AddressType } from '../types/address.type';
 import { RpcException } from '@nestjs/microservices';
+import { SellerProfile } from '../schemas/seller.entity';
+import { UserRoles } from '../schemas/user-roles.entity';
 
 @Injectable()
 export class UserServiceService {
@@ -18,28 +20,60 @@ export class UserServiceService {
     private readonly userRepository: Repository<Users>,
     @InjectRepository(Address)
     private readonly addressRepository: Repository<Address>,
+    @InjectRepository(SellerProfile)
+    private readonly sellerProfileRepository: Repository<SellerProfile>,
+    @InjectRepository(UserRoles)
+    private readonly userRolesRepository: Repository<UserRoles>,
   ) {}
 
   async createProfile(data: ProfileData) {
-    console.log('data:2', data);
-    const { emailId, username, mobile, userid, role } = data;
-    const userProfileData = await this.userRepository.create({
-      user_id: userid,
-      name: username,
-      phone: mobile,
-      email_id: emailId,
+    const { emailId, username, mobile, userid, role, storeName } = data;
+
+    if (role === 'SELLER') {
+      const sellerProfile = await this.sellerProfileRepository.create({
+        seller_id: userid,
+        is_active: true,
+        store_name: storeName,
+      });
+      await this.sellerProfileRepository.save(sellerProfile);
+    } else if (role === 'CUSTOMER') {
+      const userProfileData = await this.userRepository.create({
+        user_id: userid,
+        name: username,
+        phone: mobile,
+        email_id: emailId,
+        role: role,
+      });
+      await this.userRepository.save(userProfileData);
+    }
+
+    const userRoles = await this.userRolesRepository.create({
       role: role,
+      user_id: userid,
     });
-    await this.userRepository.save(userProfileData);
+    await this.userRolesRepository.save(userRoles);
   }
 
   async getUserByEmail(data: any) {
-    const { userId } = data;
-    const user = await this.userRepository.findOneBy({ user_id: userId });
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+    const { emailId, userId } = data;
+    const userRole = await this.userRolesRepository.findOne({
+      where: { user_id: userId },
+    });
+    if (userRole?.role === 'CUSTOMER') {
+      const user = await this.userRepository.findOneBy({ email_id: emailId });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+      return user;
+    } else if (userRole?.role === 'SELLER') {
+      const seller = await this.sellerProfileRepository.findOneBy({
+        seller_id: userId,
+      });
+      if (!seller) {
+        throw new UnauthorizedException('Seller not found');
+      }
+      return seller;
     }
-    return user;
   }
 
   async getUserAddressess(data: any) {

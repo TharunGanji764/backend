@@ -17,6 +17,7 @@ import type { NotificationChannel } from '../interfaces/notification-channel.int
 import type { Hash } from '../interfaces/hashing.interface';
 import { v4 as uuidv4 } from 'uuid';
 import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AuthServiceService {
@@ -42,7 +43,7 @@ export class AuthServiceService {
   ) {}
 
   async registerUser(userData: RegisterDTO) {
-    const { emailId, password, username, mobile, role } = userData;
+    const { emailId, password, username, mobile, role, storeName } = userData;
     const isUserExist = await this.userRepository.findOne({
       where: { emailId: emailId },
     });
@@ -60,6 +61,7 @@ export class AuthServiceService {
       username,
       mobile,
       role,
+      storeName,
     };
     await this.redisOtpClient.set(
       `otp:register:${emailId}`,
@@ -92,10 +94,16 @@ export class AuthServiceService {
     if (!isOtpValid) {
       throw new ConflictException('Invalid OTP provided');
     }
-    const { password, ...rest } = JSON.parse(user);
+    const parsedData = JSON.parse(user);
+    const { password, ...rest } = parsedData;
+    const saveUser = await this.userRepository.create({
+      userid: parsedData?.userid,
+      emailId: parsedData?.emailId,
+      password: password,
+      is_active: true,
+    });
     this.userClient.emit('create-profile', { ...rest });
-    await this.userRepository.create(JSON.parse(user));
-    await this.userRepository.save(JSON.parse(user));
+    await this.userRepository.save(saveUser);
     return { message: 'User registered successfully ' };
   }
 
@@ -132,6 +140,12 @@ export class AuthServiceService {
     const isUserExist = await this.userRepository.findOne({
       where: { emailId: emailId },
     });
+    const user = await firstValueFrom(
+      this.userClient.send('get_user_data', {
+        emailId,
+        userId: isUserExist?.userid,
+      }),
+    );
 
     const totalSessions = await this.redisSessionManagement.keys(`sessionId:*`);
     const userSessions: any = [];
@@ -165,12 +179,12 @@ export class AuthServiceService {
 
     const sessionId = uuidv4();
     const payload = {
-      sub: isUserExist.userid,
-      username: isUserExist.username,
-      email: isUserExist.emailId,
+      sub: user?.user_id,
+      username: user?.name,
+      email: user?.email_id,
       sessionId,
-      mobile: isUserExist?.mobile,
-      role: isUserExist?.role,
+      mobile: user?.phone,
+      role: user?.role,
     };
     const accessToken = await this.tokenService.generateAccessToken(payload);
     const refreshToken = await this.tokenService.generateRefreshToken(payload);
@@ -179,7 +193,6 @@ export class AuthServiceService {
       refreshToken,
       userId: isUserExist.userid,
     };
-    console.log('session: ', session);
     await this.redisSessionManagement.set(
       `sessionId:${sessionId}`,
       JSON.stringify(session),
