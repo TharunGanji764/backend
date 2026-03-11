@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { ProductSearch } from '../schemas/product-search.entity';
 import { WishListEntity } from '../schemas/wishList.entity';
 import { RpcException } from '@nestjs/microservices';
+import { CreateProduct } from '../types/create-product.types';
+import { ProductStatus } from '../enums/product.enum';
 
 @Injectable()
 export class ProductServiceService {
@@ -141,5 +143,30 @@ export class ProductServiceService {
       .where(`product.category %:category`, { category })
       .getMany();
     return productsByCategory;
+  }
+
+  async createProduct(data: { productData: CreateProduct; userId: string }) {
+    const {
+      brand,
+      category,
+      full_description,
+      product_name,
+      short_description,
+    } = data?.productData;
+    const { userId } = data;
+    const newProduct = await this.productsRepository.create({
+      title: product_name,
+      brand,
+      category,
+      full_description: full_description,
+      description: short_description,
+      status: ProductStatus?.DRAFT,
+      seller_id: userId,
+    });
+    await this.productsRepository.save(newProduct);
+    return {
+      product_id: newProduct?.id,
+      message: 'Product created successfully',
+    };
   }
 }

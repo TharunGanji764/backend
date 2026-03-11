@@ -140,6 +140,10 @@ export class AuthServiceService {
     const isUserExist = await this.userRepository.findOne({
       where: { emailId: emailId },
     });
+
+    if (!isUserExist) {
+      throw new NotFoundException('Invalid user');
+    }
     const user = await firstValueFrom(
       this.userClient.send('get_user_data', {
         emailId,
@@ -164,10 +168,6 @@ export class AuthServiceService {
       );
     }
 
-    if (!isUserExist) {
-      throw new NotFoundException('Invalid user');
-    }
-
     const isPasswordValid = await this.hashService.compare(
       password,
       isUserExist.password,
@@ -179,8 +179,8 @@ export class AuthServiceService {
 
     const sessionId = uuidv4();
     const payload = {
-      sub: user?.user_id,
-      username: user?.name,
+      sub: user?.user_id || user?.seller_id,
+      username: user?.name || user?.store_name,
       email: user?.email_id,
       sessionId,
       mobile: user?.phone,

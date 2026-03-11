@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ProductServiceService } from './product-service.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import type { CreateProduct } from '../types/create-product.types';
 
 @Controller()
 export class ProductServiceController {
@@ -46,5 +47,16 @@ export class ProductServiceController {
   @MessagePattern('get_products_by_category')
   async getProductsByCategory(@Payload() data: any) {
     return await this.productServiceService.getProductsByCategory(data);
+  }
+
+  @MessagePattern('create-product')
+  async createProduct(
+    @Payload()
+    data: {
+      productData: CreateProduct;
+      userId: any;
+    },
+  ) {
+    return await this.productServiceService.createProduct(data);
   }
 }

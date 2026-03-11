@@ -28,4 +28,7 @@ export class SellerProfile {
 
   @Column({ default: 'SELLER' })
   role: string;
+
+  @Column({ nullable: true })
+  email_id: string;
 }

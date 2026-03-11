@@ -21,6 +21,7 @@ export class RegisterDTO {
   password: string;
 
   @IsString()
+  @IsOptional()
   username: string;
 
   @IsString()

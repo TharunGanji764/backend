@@ -34,6 +34,7 @@ export class UserServiceService {
         seller_id: userid,
         is_active: true,
         store_name: storeName,
+        email_id: emailId,
       });
       await this.sellerProfileRepository.save(sellerProfile);
     } else if (role === 'CUSTOMER') {
