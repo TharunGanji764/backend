@@ -13,6 +13,7 @@ import { ProductDimensions } from './product-dimensions.entity';
 import { ProductImages } from './product-images.entity';
 import { ProductReviews } from './product-reviews.entity';
 import { ProductStatus } from '../enums/product.enum';
+import { ProductVariants } from './product-variants.entity';
 
 @Entity()
 export class Products {
@@ -100,4 +101,7 @@ export class Products {
 
   @OneToMany(() => ProductReviews, (review) => review.product)
   reviews: ProductReviews[];
+
+  @OneToMany(() => ProductVariants, (variant) => variant.product)
+  variants: ProductVariants[];
 }

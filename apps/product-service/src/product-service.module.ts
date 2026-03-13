@@ -11,6 +11,8 @@ import { ProductReviews } from '../schemas/product-reviews.entity';
 import { ProductTags } from '../schemas/product-tags.entity';
 import { ProductSearch } from '../schemas/product-search.entity';
 import { WishListEntity } from '../schemas/wishList.entity';
+import { ProductVariants } from '../schemas/product-variants.entity';
+import { ProductVariantsAttributes } from '../schemas/product-variant-attributes.entity';
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { WishListEntity } from '../schemas/wishList.entity';
       ProductTags,
       ProductSearch,
       WishListEntity,
+      ProductVariants,
+      ProductVariantsAttributes,
     ]),
   ],
   controllers: [ProductServiceController],
