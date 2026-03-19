@@ -11,7 +11,7 @@ import {
 import { Products } from './products.entity';
 import { ProductVariantsAttributes } from './product-variant-attributes.entity';
 
-@Entity('product_variants')
+@Entity('product-variants')
 export class ProductVariants {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -20,8 +20,11 @@ export class ProductVariants {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'product_id' })
-  product: Products;
+  product: Products[];
 
+  @Column({ name: 'product_id' })
+  product_id: number;
+  
   @Column({ type: 'varchar', nullable: false, length: 30 })
   sku: string;
 

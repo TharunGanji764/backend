@@ -120,7 +120,7 @@ export class AuthGatewayController {
 
   @Post('refresh')
   async refreshToken(@Req() req, @Res({ passthrough: true }) res: any) {
-    const refreshToken = req.cookies.refreshToken;
+    const refreshToken = req.cookies.refresh_token;
     try {
       const response = await lastValueFrom(
         this.httpService.post(

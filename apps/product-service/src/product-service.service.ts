@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Products } from '../schemas/products.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ProductSearch } from '../schemas/product-search.entity';
 import { WishListEntity } from '../schemas/wishList.entity';
 import { RpcException } from '@nestjs/microservices';
 import { CreateProduct } from '../types/create-product.types';
 import { ProductStatus } from '../enums/product.enum';
+import { ProductVariants } from '../schemas/product-variants.entity';
+import { ProductVariantsAttributes } from '../schemas/product-variant-attributes.entity';
 
 @Injectable()
 export class ProductServiceService {
@@ -17,6 +19,10 @@ export class ProductServiceService {
     private productSearchRepository: Repository<ProductSearch>,
     @InjectRepository(WishListEntity)
     private wishListRepository: Repository<WishListEntity>,
+    @InjectRepository(ProductVariants)
+    private productVariantsRepository: Repository<ProductVariants>,
+    @InjectRepository(ProductVariantsAttributes)
+    private ProductVariantsAttributesRepository: Repository<ProductVariantsAttributes>,
   ) {}
 
   async getProducts(page: number, limit: number) {
@@ -24,6 +30,7 @@ export class ProductServiceService {
     const [productsData, total] = await this.productsRepository.findAndCount({
       take: limit,
       skip: offset,
+      where: { status: ProductStatus?.ACTIVE },
     });
     return { page, limit, total, data: productsData };
   }
@@ -168,5 +175,133 @@ export class ProductServiceService {
       product_id: newProduct?.id,
       message: 'Product created successfully',
     };
+  }
+
+  async addProductVariants(productdata: any) {
+    const { productId, userId: sellerId, ...rest } = productdata;
+    const { productData } = rest;
+    const isProductExist = await this.productsRepository.findOne({
+      where: { id: productId, seller_id: sellerId },
+    });
+    if (!isProductExist) {
+      throw new RpcException({
+        message: 'Product not found',
+      });
+    }
+    const variants = productData?.map((variant: any) => ({
+      product: { id: productId },
+      sku: variant?.sku,
+      price: variant?.price,
+      stock: variant?.stock,
+      status: 'active',
+    }));
+    const savedVariants = await this.productVariantsRepository.save(variants);
+    const attributes: any[] = [];
+
+    savedVariants?.forEach((savedVariant, variantIndex) => {
+      const variantAttributes = productData[variantIndex]?.attributes;
+
+      variantAttributes?.forEach((attr: any) => {
+        attributes.push({
+          variant: { id: savedVariant.id },
+          attribute_name: attr?.attribute_name,
+          attribute_value: attr?.attribute_value,
+        });
+      });
+    });
+    const savedAttributes =
+      await this.ProductVariantsAttributesRepository.save(attributes);
+    return { savedVariants, savedAttributes };
+  }
+
+  async updateProductVariants(productdata: any) {
+    const { productId, userId: sellerId, ...rest } = productdata;
+    const { productData } = rest;
+    const isProductExist = await this.productsRepository.findOne({
+      where: { id: productId, seller_id: sellerId },
+    });
+    if (!isProductExist) {
+      throw new RpcException({
+        message: 'Product not found',
+      });
+    }
+    const newvariants = productData?.map((variant: any) => ({
+      id: variant?.id,
+      product: { id: productId },
+      sku: variant?.sku,
+      price: variant?.price,
+      stock: variant?.stock,
+      status: 'active',
+      updated_at: new Date(),
+    }));
+    const savedVariants =
+      await this.productVariantsRepository.save(newvariants);
+    const variantIds = savedVariants?.map((variant: any) => variant?.id);
+    await this.ProductVariantsAttributesRepository.delete({
+      variant: { id: In(variantIds) },
+    });
+    const newattributes: any[] = [];
+    savedVariants?.forEach((savedVariant, variantIndex) => {
+      const variantAttributes = productData[variantIndex]?.attributes;
+
+      variantAttributes?.forEach((attr: any) => {
+        newattributes.push({
+          variant: { id: savedVariant.id },
+          attribute_name: attr.attribute_name,
+          attribute_value: attr.attribute_value,
+        });
+      });
+    });
+
+    await this.ProductVariantsAttributesRepository.save(newattributes);
+    return { message: 'variants updated successfully' };
+  }
+
+  async deleteProductAttributes(productdata: any) {
+    const { productId, userId: sellerId, ...rest } = productdata;
+    const { productData } = rest;
+    const isProductExist = await this.productsRepository.findOne({
+      where: { id: productId, seller_id: sellerId },
+      relations: ['variants'],
+    });
+    if (!isProductExist) {
+      throw new RpcException({
+        message: 'Product not found',
+      });
+    }
+    const variants = await this.ProductVariantsAttributesRepository.find({
+      where: {
+        attribute_name: productData?.name,
+        attribute_value: productData?.value,
+      },
+      relations: ['variant'],
+    });
+    const variantIds = variants?.map((variant: any) => variant?.variant?.id);
+    if (!variantIds) return;
+    await this.ProductVariantsAttributesRepository.delete({
+      variant: { id: In(variantIds) },
+    });
+    await this.productVariantsRepository.delete({
+      id: In(variantIds),
+    });
+    return { message: 'variants updated successfully' };
+  }
+
+  async getSellerProducts(sellerId: any) {
+    const sellerProducts = await this.productsRepository.find({
+      where: { seller_id: sellerId },
+      relations: ['variants', 'variants.attributes'],
+      select: [
+        'brand',
+        'category',
+        'createdAt',
+        'description',
+        'full_description',
+        'id',
+        'seller_id',
+        'title',
+      ],
+    });
+    return sellerProducts;
   }
 }

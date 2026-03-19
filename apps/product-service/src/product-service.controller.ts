@@ -59,4 +59,23 @@ export class ProductServiceController {
   ) {
     return await this.productServiceService.createProduct(data);
   }
+
+  @MessagePattern('create-product-variants')
+  async addProductVariants(@Payload() data: any) {
+    return await this.productServiceService.addProductVariants(data);
+  }
+  @MessagePattern('update-product-variants')
+  async updateProductVariants(@Payload() data: any) {
+    return await this.productServiceService.updateProductVariants(data);
+  }
+  @MessagePattern('delete-product-attributes')
+  async deleteProductAttributes(@Payload() data: any) {
+    return await this.productServiceService.deleteProductAttributes(data);
+  }
+
+  @MessagePattern('get-seller-product')
+  async getSellerProducts(@Payload() data: any) {
+    const { sellerId } = data;
+    return await this.productServiceService.getSellerProducts(sellerId);
+  }
 }
